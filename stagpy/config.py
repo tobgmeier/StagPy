@@ -104,7 +104,7 @@ CONF_DEF['field'] = OrderedDict((
     ('shift', Conf(None, True, None, {'type': int},
                    False, 'Shift plot horizontally')),
     ('interpolate', switch_opt(True, None, 'apply Gouraud shading')),
-    ('colorbar', switch_opt(True, None, 'add color bar to plot')),
+    ('colorbar', switch_opt(False, None, 'add color bar to plot')),
     ('shrinkcb',
         Conf(0.5, False, None, {},
              True, 'color bar shrink factor')),

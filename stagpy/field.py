@@ -4,11 +4,21 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpat
+import math
+import os
 
 from . import conf, misc, phyvars
 from .error import NotAvailableError
 from .stagyydata import StagyyData
+import f90nml
 
+from matplotlib.colors import LinearSegmentedColormap
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+from mpl_toolkits.axes_grid1.colorbar import colorbar
+
+my_path = os.path.abspath(os.path.dirname(__file__))
+cm_data = np.loadtxt(my_path+"/batlow.txt")
+vik_map = LinearSegmentedColormap.from_list('vik', cm_data)
 
 def _threed_extract(step, var):
     """Return suitable slices and mesh for 3D fields."""
@@ -141,7 +151,7 @@ def set_of_vars(arg_plot):
     return sovs
 
 
-def plot_scalar(step, var, field=None, axis=None, **extra):
+def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_substellar = False,  **extra):
     """Plot scalar field.
 
     Args:
@@ -205,7 +215,8 @@ def plot_scalar(step, var, field=None, axis=None, **extra):
         axis.add_patch(cmb)
 
     extra_opts = dict(
-        cmap=conf.field.cmap.get(var),
+        #cmap=conf.field.cmap.get(var),
+        cmap = vik_map, 
         vmin=conf.plot.vmin,
         vmax=conf.plot.vmax,
         norm=mpl.colors.LogNorm() if var == 'eta' else None,
@@ -216,7 +227,8 @@ def plot_scalar(step, var, field=None, axis=None, **extra):
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
 
     cbar = None
-    if conf.field.colorbar:
+    if conf.field.colorbar: #TGM: turned this off by default as it is plotted below (for now)
+        print(conf.field.colorbar)
         cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb)
         cbar.set_label(meta.description +
                        (' pert.' if conf.field.perturbation else '') +
@@ -229,6 +241,46 @@ def plot_scalar(step, var, field=None, axis=None, **extra):
     axis.set_adjustable('box')
     axis.set_xlim(xmin, xmax)
     axis.set_ylim(ymin, ymax)
+
+    divider = make_axes_locatable(axis)
+    cax = divider.append_axes("right", size="5%", pad=+0.05)
+    cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb,orientation="vertical", cax=cax)
+    #cbar.set_label('T [K]')
+    cbar.set_label(meta.description +
+               (' pert.' if conf.field.perturbation else '') +
+               (' ({})'.format(unit) if unit else '') +
+               (' [' + meta.dim + ']' if meta.dim != '1' else ' [ ]'))
+    cax2 = divider.append_axes("top", size="9%", pad=+0.0)
+    cax2.axis('off')
+
+    nml = f90nml.read('par')
+
+    cax3 = divider.append_axes("bottom", size="9%", pad=+0.0)
+    cax3.axis('off')
+    eta0 = str(int(math.log10(nml['viscosity']['eta0'])))
+    Tcmb = str(int(nml['boundaries']['botT_val']))
+    Tday = str(int(nml['boundaries']['topT_locked_subsolar']))
+    Tnight = str(int(nml['boundaries']['topT_locked_farside']))
+    radius  = nml['geometry']['r_cmb']+nml['geometry']['d_dimensional']
+    rcmb = nml['geometry']['r_cmb']
+    if print_substellar == True:
+        cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
+        cax3.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
+        cax2.text(0.48, 0.25, 'day', horizontalalignment='right', verticalalignment='center', transform=cax2.transAxes)
+        cax2.text(0.52, 0.25, 'night', horizontalalignment='left', verticalalignment='center', transform=cax2.transAxes)
+        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='y')
+        axis.text(-radius-0.08*radius, 0, "STAR", ha="right", va="center",bbox=bbox_props,color='black')
+        axis.text(-rcmb + 0.03 * rcmb , 0, "90$\degree$", ha="left", va="center", color='black',size=9)
+        axis.text(rcmb - 0.03 * rcmb , 0, "270$\degree$", ha="right", va="center", color='black',size=9)
+        axis.text(0 , rcmb - 0.03 * rcmb, "180$\degree$", ha="center", va="top", color='black',size=9)
+        axis.text(0 , -rcmb + 0.03 * rcmb, "0$\degree$", ha="center", va="bottom", color='black',size=9)
+    if print_time >= 0 :
+        #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
+        cax2.text(0.5, 1.2, '{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center',verticalalignment='center')
+        axis.text(0,0,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center', size=10)
+
+
+
     return fig, axis, surf, cbar
 
 
