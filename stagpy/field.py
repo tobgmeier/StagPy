@@ -262,22 +262,25 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
     Tday = str(int(nml['boundaries']['topT_locked_subsolar']))
     Tnight = str(int(nml['boundaries']['topT_locked_farside']))
     radius  = nml['geometry']['r_cmb']+nml['geometry']['d_dimensional']
+    rdim  = nml['geometry']['d_dimensional']
     rcmb = nml['geometry']['r_cmb']
+
+    rda = 0.5*(1-rcmb/(rcmb+rdim)) + 0.005 # without 0.03 this is the rdimensional in the axis system.
     if print_substellar == True:
         cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
         cax3.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
         cax2.text(0.48, 0.25, 'day', horizontalalignment='right', verticalalignment='center', transform=cax2.transAxes)
         cax2.text(0.52, 0.25, 'night', horizontalalignment='left', verticalalignment='center', transform=cax2.transAxes)
         bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='y')
-        axis.text(-radius-0.08*radius, 0, "STAR", ha="right", va="center",bbox=bbox_props,color='black')
-        axis.text(-rcmb + 0.03 * rcmb , 0, "90$\degree$", ha="left", va="center", color='black',size=9)
-        axis.text(rcmb - 0.03 * rcmb , 0, "270$\degree$", ha="right", va="center", color='black',size=9)
-        axis.text(0 , rcmb - 0.03 * rcmb, "180$\degree$", ha="center", va="top", color='black',size=9)
-        axis.text(0 , -rcmb + 0.03 * rcmb, "0$\degree$", ha="center", va="bottom", color='black',size=9)
+        axis.text(-rda/6, 0.5, "STAR", ha="right", va="center",bbox=bbox_props,color='black',transform=axis.transAxes)
+        axis.text(rda , 0.5, "90$\degree$", ha="left", va="center", color='black',size=9,transform=axis.transAxes)
+        axis.text(1-rda, 0.5, "270$\degree$", ha="right", va="center", color='black',size=9,transform=axis.transAxes)
+        axis.text(0.5 , 1-rda, "180$\degree$", ha="center", va="top", color='black',size=9,transform=axis.transAxes)
+        axis.text(0.5, rda, "0$\degree$", ha="center", va="bottom", color='black',size=9,transform=axis.transAxes)
     if print_time >= 0 :
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         cax2.text(0.5, 1.2, '{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center',verticalalignment='center')
-        axis.text(0,0,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center', size=10)
+        axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center', size=10,transform = axis.transAxes)
 
 
 
