@@ -233,11 +233,15 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         cbar.set_label(meta.description +
                        (' pert.' if conf.field.perturbation else '') +
                        (' ({})'.format(unit) if unit else ''))
+    
     if step.geom.spherical or conf.plot.ratio is None:
-        plt.axis('equal')
-        plt.axis('off')
+        print('lsjfleijsflisejfls')
+        axis.axis('equal')
+        axis.axis('off')
     else:
+        print('fjlsijflsijf')
         axis.set_aspect(conf.plot.ratio / axis.get_data_ratio())
+    
     axis.set_adjustable('box')
     axis.set_xlim(xmin, xmax)
     axis.set_ylim(ymin, ymax)
