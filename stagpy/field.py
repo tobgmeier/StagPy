@@ -274,7 +274,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         cax2.text(0.48, 0.25, 'day', horizontalalignment='right', verticalalignment='center', size = text_size,transform=cax2.transAxes)
         cax2.text(0.52, 0.25, 'night', horizontalalignment='left', verticalalignment='center', size = text_size, transform=cax2.transAxes)
         bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='y')
-        axis.text(-rda/6, 0.5, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',transform=axis.transAxes)
+        axis.text(-radius-0.07*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black')
         axis.text(rda , 0.5, "90$\degree$", ha="left", va="center", color='black',size=text_size,transform=axis.transAxes)
         axis.text(1-rda, 0.5, "270$\degree$", ha="right", va="center", color='black',size=text_size,transform=axis.transAxes)
         axis.text(0.5 , 1-rda, "180$\degree$", ha="center", va="top", color='black',size=text_size,transform=axis.transAxes)
