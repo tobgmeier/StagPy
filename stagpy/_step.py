@@ -268,7 +268,7 @@ class _Fields(Mapping):
 
     def _set(self, name, fld):
         sdat = self.step.sdat
-        col_fld = sdat.collected_fields
+        col_fld = sdat._collected_fields
         col_fld.append((self.step.istep, name))
         if sdat.nfields_max is not None:
             while len(col_fld) > sdat.nfields_max:
@@ -289,7 +289,7 @@ class _Fields(Mapping):
         None if not available for this time step.
         """
         if self._header is UNDETERMINED:
-            binfiles = self.step.sdat.binfiles_set(self.step.isnap)
+            binfiles = self.step.sdat._binfiles_set(self.step.isnap)
             if binfiles:
                 self._header = stagyyparsers.fields(binfiles.pop(),
                                                     only_header=True)
@@ -448,14 +448,6 @@ class Step:
             if istep != self.istep:
                 self._isnap = None
         return self._isnap
-
-    @isnap.setter
-    def isnap(self, isnap):
-        """Fields snap corresponding to time step"""
-        try:
-            self._isnap = int(isnap)
-        except ValueError:
-            pass
 
 
 class EmptyStep(Step):
