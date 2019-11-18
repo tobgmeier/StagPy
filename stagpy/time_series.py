@@ -20,7 +20,7 @@ def _collect_marks(sdat):
 
 
 def _plot_time_list(sdat, lovs, tseries, metas, times=None):
-    """Plot requested profiles"""
+    """Plot requested profiles."""
     if times is None:
         times = {}
     time_marks = _collect_marks(sdat)
@@ -171,7 +171,7 @@ def cmd():
         conf.time
         conf.core
     """
-    sdat = StagyyData(conf.core.path)
+    sdat = StagyyData()
     if sdat.tseries is None:
         return
 

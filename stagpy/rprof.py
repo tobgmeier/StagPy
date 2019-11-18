@@ -8,11 +8,12 @@ from .stagyydata import StagyyData
 
 
 def _plot_rprof_list(sdat, lovs, rprofs, metas, stepstr, rads=None):
-    """Plot requested profiles"""
+    """Plot requested profiles."""
     if rads is None:
         rads = {}
     for vfig in lovs:
-        fig, axes = plt.subplots(ncols=len(vfig), sharey=True)
+        fig, axes = plt.subplots(ncols=len(vfig), sharey=True,
+                                 figsize=(4 * len(vfig), 6))
         axes = [axes] if len(vfig) == 1 else axes
         fname = 'rprof_'
         for iplt, vplt in enumerate(vfig):
@@ -203,7 +204,7 @@ def cmd():
         conf.rprof
         conf.core
     """
-    sdat = StagyyData(conf.core.path)
+    sdat = StagyyData()
     if sdat.rprof is None:
         return
 

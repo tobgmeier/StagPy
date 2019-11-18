@@ -7,6 +7,7 @@ from textwrap import indent, TextWrapper
 import sys
 
 import loam.tools
+import pandas
 
 from . import conf, phyvars, __version__
 from . import stagyydata
@@ -21,9 +22,9 @@ def info_cmd():
         conf.info
     """
     varlist = [var for var in conf.info.output.replace(',', ' ').split()]
-    sdat = stagyydata.StagyyData(conf.core.path)
-    lsnap = sdat.snaps.last
-    lstep = sdat.steps.last
+    sdat = stagyydata.StagyyData()
+    lsnap = sdat.snaps[-1]
+    lstep = sdat.steps[-1]
     print('StagYY run in {}'.format(sdat.path))
     if lsnap.geom.threed:
         dimension = '{} x {} x {}'.format(lsnap.geom.nxtot,
@@ -49,12 +50,28 @@ def info_cmd():
             print(', snapshot {}/{}'.format(step.isnap, lsnap.isnap))
         else:
             print()
-        print(indent(step.timeinfo.loc[varlist].to_string(), '  '))
+        series = step.timeinfo.loc[varlist]
+        if conf.scaling.dimensional:
+            series = series.copy()
+            dimensions = []
+            for var, val in series.iteritems():
+                dim = phyvars.TIME.get(var) or phyvars.TIME_EXTRA.get(var)
+                dim = dim.dim if dim is not None else '1'
+                if dim == '1':
+                    dimensions.append('')
+                else:
+                    series[var], dim = sdat.scale(val, dim)
+                    dimensions.append(dim)
+            series = pandas.concat(
+                [series, pandas.Series(data=dimensions, index=series.index,
+                                       name='dim')],
+                axis=1)
+        print(indent(series.to_string(header=False), '  '))
         print()
 
 
 def _pretty_print(key_val, sep=': ', min_col_width=39, text_width=None):
-    """Print a iterable of key/values
+    """Print a iterable of key/values.
 
     Args:
         key_val (list of (str, str)): the pairs of section names and text.
@@ -96,7 +113,7 @@ def _pretty_print(key_val, sep=': ', min_col_width=39, text_width=None):
 
 
 def _layout(dict_vars, dict_vars_extra):
-    """Print nicely [(var, description)] from phyvars"""
+    """Print nicely [(var, description)] from phyvars."""
     desc = [(v, m.description) for v, m in dict_vars.items()]
     desc.extend((v, baredoc(m.description))
                 for v, m in dict_vars_extra.items())

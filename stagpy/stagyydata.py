@@ -4,6 +4,7 @@ Note:
     The helper classes are not designed to be instantiated on their own, but
     only as attributes of StagyyData instances. Users of this module should
     only instantiate :class:`StagyyData`.
+
 """
 
 import re
@@ -26,16 +27,14 @@ def _as_view_item(obj):
 
 
 class _Scales:
+    """Dimensionful scales.
 
-    """Dimensionful scales."""
+    Args:
+        sdat (:class:`StagyyData`): the StagyyData instance owning the
+            :class:`_Scales` instance.
+    """
 
     def __init__(self, sdat):
-        """Initialization of instances:
-
-        Args:
-            sdat (:class:`StagyyData`): the StagyyData instance owning the
-                :class:`_Scales` instance.
-        """
         self._sdat = sdat
 
     @property
@@ -95,21 +94,18 @@ class _Scales:
 
 
 class _Refstate:
-
     """Reference state profiles.
 
     The :attr:`StagyyData.refstate` attribute is an instance of this class.
     Reference state profiles are accessed through the attributes of this
     object.
+
+    Args:
+        sdat (:class:`StagyyData`): the StagyyData instance owning the
+            :class:`_Steps` instance.
     """
 
     def __init__(self, sdat):
-        """Initialization of instances:
-
-        Args:
-            sdat (:class:`StagyyData`): the StagyyData instance owning the
-                :class:`_Steps` instance.
-        """
         self._sdat = sdat
         self._data = UNDETERMINED
 
@@ -161,7 +157,6 @@ class _Refstate:
 
 
 class _Steps:
-
     """Collections of time steps.
 
     The :attr:`StagyyData.steps` attribute is an instance of this class.
@@ -185,20 +180,18 @@ class _Steps:
         for step in steps[0,3,5,-2:]:
             # iterate through steps 0, 3, 5 and the last two
             do_something(step)
+
+    Args:
+        sdat (:class:`StagyyData`): the StagyyData instance owning the
+            :class:`_Steps` instance.
+    Attributes:
+        sdat (:class:`StagyyData`): the StagyyData instance owning the
+            :class:`_Steps` instance.
     """
 
     def __init__(self, sdat):
-        """Initialization of instances:
-
-        Args:
-            sdat (:class:`StagyyData`): the StagyyData instance owning the
-                :class:`_Steps` instance.
-        Attributes:
-            sdat (:class:`StagyyData`): the StagyyData instance owning the
-                :class:`_Steps` instance.
-        """
         self.sdat = sdat
-        self._last = UNDETERMINED
+        self._len = UNDETERMINED
         self._data = {None: _step.EmptyStep()}  # for non existent snaps
 
     def __repr__(self):
@@ -221,7 +214,7 @@ class _Steps:
                 istep -= len(self)
                 raise error.InvalidTimestepError(
                     self.sdat, istep,
-                    'Last istep is {}'.format(self.last.istep))
+                    'Last istep is {}'.format(len(self) - 1))
         if istep not in self._data:
             self._data[istep] = _step.Step(istep, self.sdat)
         return self._data[istep]
@@ -233,7 +226,10 @@ class _Steps:
             del self._data[istep]
 
     def __len__(self):
-        return self.last.istep + 1
+        if self._len is UNDETERMINED:
+            # not necessarily the last one...
+            self._len = self.sdat.tseries.index[-1] + 1
+        return self._len
 
     def __iter__(self):
         return iter(self[:])
@@ -270,22 +266,8 @@ class _Steps:
         """Build a _StepsView with requested filters."""
         return self[:].filter(**filters)
 
-    @property
-    def last(self):
-        """Last time step available.
-
-        Example:
-            >>> sdat = StagyyData('path/to/run')
-            >>> assert(sdat.steps.last is sdat.steps[-1])
-        """
-        if self._last is UNDETERMINED:
-            # not necessarily the last one...
-            self._last = self.sdat.tseries.index[-1]
-        return self[self._last]
-
 
 class _Snaps(_Steps):
-
     """Collections of snapshots.
 
     The :attr:`StagyyData.snaps` attribute is an instance of this class.
@@ -296,18 +278,16 @@ class _Snaps(_Steps):
         sdat.snaps[isnap]  # Step object of the isnap-th snapshot
 
     This class inherits from :class:`_Steps`.
+
+    Args:
+        sdat (:class:`StagyyData`): the StagyyData instance owning the
+            :class:`_Snaps` instance.
+    Attributes:
+        sdat (:class:`StagyyData`): the StagyyData instance owning the
+            :class:`_Snaps` instance.
     """
 
     def __init__(self, sdat):
-        """Initialization of instances:
-
-        Args:
-            sdat (:class:`StagyyData`): the StagyyData instance owning the
-                :class:`_Snaps` instance.
-        Attributes:
-            sdat (:class:`StagyyData`): the StagyyData instance owning the
-                :class:`_Snaps` instance.
-        """
         self._isteps = {}
         self._all_isteps_known = False
         super().__init__(sdat)
@@ -343,15 +323,15 @@ class _Snaps(_Steps):
         del self.sdat.steps[istep]
 
     def __len__(self):
-        if self._last is UNDETERMINED:
-            self._last = -1
+        if self._len is UNDETERMINED:
+            self._len = -1
             if self.sdat.hdf5:
                 isnap = -1
                 for isnap, istep in stagyyparsers.read_time_h5(self.sdat.hdf5):
                     self._bind(isnap, istep)
-                self._last = isnap
+                self._len = isnap
                 self._all_isteps_known = True
-            if self._last < 0:
+            if self._len < 0:
                 out_stem = re.escape(pathlib.Path(
                     self.sdat.par['ioin']['output_file_stem'] + '_').name[:-1])
                 rgx = re.compile(
@@ -360,10 +340,11 @@ class _Snaps(_Steps):
                 for fname in self.sdat._files:
                     match = rgx.match(fname.name)
                     if match is not None and match.group(1) in fstems:
-                        self._last = max(int(match.group(2)), self._last)
-            if self._last < 0:
+                        self._len = max(int(match.group(2)), self._len)
+            if self._len < 0:
                 raise error.NoSnapshotError(self.sdat)
-        return self._last + 1
+            self._len += 1
+        return self._len
 
     def at_time(self, time, after=False):
         """Return snap corresponding to a given physical time.
@@ -405,34 +386,21 @@ class _Snaps(_Steps):
         self._isteps[isnap] = istep
         self.sdat.steps[istep]._isnap = isnap
 
-    @property
-    def last(self):
-        """Last snapshot available.
-
-        Example:
-            >>> sdat = StagyyData('path/to/run')
-            >>> assert(sdat.snaps.last is sdat.snaps[-1])
-        """
-        return self[len(self) - 1]
-
 
 class _StepsView:
-
     """Filtered iterator over steps or snaps.
 
     Instances of this class are returned when taking slices of
     :attr:`StagyyData.steps` or :attr:`StagyyData.snaps` attributes.
+
+    Args:
+        steps_col (:class:`_Steps` or :class:`_Snaps`): steps collection,
+            i.e. :attr:`StagyyData.steps` or :attr:`StagyyData.snaps`
+            attributes.
+        items (iterable): iterable of isteps/isnaps or slices.
     """
 
     def __init__(self, steps_col, items):
-        """Initialization of instances:
-
-        Args:
-            steps_col (:class:`_Steps` or :class:`_Snaps`): steps collection,
-                i.e. :attr:`StagyyData.steps` or :attr:`StagyyData.snaps`
-                attributes.
-            items (iterable): iterable of isteps/isnaps or slices.
-        """
         self._col = steps_col
         self._items = items
         self._flt = {
@@ -516,28 +484,26 @@ class _StepsView:
 
 
 class StagyyData:
+    """Generic lazy interface to StagYY output data.
 
-    """Generic lazy interface to StagYY output data."""
+    Args:
+        path (pathlike): path of the StagYY run. It can either be the path
+            of the directory containing the par file, or the path of the
+            par file. If the path given is a directory, the path of the par
+            file is assumed to be path/par.  If no path is given (or None)
+            it is set to ``conf.core.path``.
+
+    Other Parameters:
+        conf.core.path: the default path.
+
+    Attributes:
+        steps (:class:`_Steps`): collection of time steps.
+        snaps (:class:`_Snaps`): collection of snapshots.
+        scales (:class:`_Scales`): dimensionful scaling factors.
+        refstate (:class:`_Refstate`): reference state profiles.
+    """
 
     def __init__(self, path=None):
-        """Initialization of instances:
-
-        Args:
-            path (pathlike): path of the StagYY run. It can either be the path
-                of the directory containing the par file, or the path of the
-                par file. If the path given is a directory, the path of the par
-                file is assumed to be path/par.  If no path is given (or None)
-                it is set to ``conf.core.path``.
-
-        Other Parameters:
-            conf.core.path: the default path.
-
-        Attributes:
-            steps (:class:`_Steps`): collection of time steps.
-            snaps (:class:`_Snaps`): collection of snapshots.
-            scales (:class:`_Scales`): dimensionful scaling factors.
-            refstate (:class:`_Refstate`): reference state profiles.
-        """
         if path is None:
             path = conf.core.path
         runpath = pathlib.Path(path)
