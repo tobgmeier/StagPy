@@ -876,3 +876,33 @@ def read_time_h5(h5folder):
     with h5py.File(h5folder / 'time_botT.h5', 'r') as h5f:
         for name, dset in h5f.items():
             yield int(name[-5:]), int(dset[2])
+
+def read_1d_field(h5folder, fieldname):  
+    filename = h5folder + "/"+fieldname+".dat"
+    data = np.loadtxt(filename)
+    zmax = int(np.max(data[:,0]))
+    len_row = len(data[np.where(data[:,0]==0)[0],1])
+    field_1d = np.empty((0,len_row))
+    for i in range(0,zmax+1):
+        row = data[np.where(data[:,0]==i)[0],1]
+        field_1d = np.vstack((field_1d,row))
+    return field_1d
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

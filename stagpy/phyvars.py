@@ -40,6 +40,8 @@ FIELD = OrderedDict((
     ('rs3', Varf('z Momentum residue', '1')),
     ('rsc', Varf('Continuity residue', '1')),
     ('mf', Varf('Melt fraction', '1')),
+    ('hf', Varf('Heat Flux', 'W/m2')),
+
 ))
 
 FIELD_EXTRA = OrderedDict((
@@ -62,6 +64,7 @@ FIELD_FILES = OrderedDict((
     ('ed', ['edot']),
     ('tcond', ['Tcond1', 'Tcond2', 'Tcond3']),
     ('f', ['mf']),
+    ('hf', ['hf']),
 ))
 
 FIELD_FILES_H5 = OrderedDict((
@@ -83,6 +86,7 @@ FIELD_FILES_H5 = OrderedDict((
     ('PrincipalStressAxis', ['sx1', 'sx2', 'sx3']),
     ('StrainRate', ['edot']),
     ('MeltFrac', ['mf']),
+    ('SurfaceHeatFlux', ['hf']),
 ))
 
 SFIELD = OrderedDict((
