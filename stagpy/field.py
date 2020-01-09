@@ -174,6 +174,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
             :func:`~matplotlib.axes.Axes.pcolormesh`, and the colorbar returned
             by :func:`matplotlib.pyplot.colorbar`.
     """
+
     if var in phyvars.FIELD:
         meta = phyvars.FIELD[var]
     else:
@@ -284,10 +285,9 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         axis.text(0.5 , 1-rda, "180$\degree$", ha="center", va="top", color='black',size=text_size,transform=axis.transAxes)
         axis.text(0.5, rda, "0$\degree$", ha="center", va="bottom", color='black',size=text_size,transform=axis.transAxes)
     if print_time >= 0 :
-        print('time')
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         cax2.text(0.5, 1.2, '{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center',verticalalignment='center', size = text_size)
-        axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
+        #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
 
 
@@ -323,7 +323,9 @@ def plot_vec(axis, step, var):
         var (str): the vector field name.
     """
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
-    dipz = step.geom.nztot // 10
+
+    dipz = step.geom.nztot // 5
+    sp = 1.0
     if conf.field.shift:
         vec1 = np.roll(vec1, conf.field.shift, axis=0)
         vec2 = np.roll(vec2, conf.field.shift, axis=0)
@@ -332,9 +334,9 @@ def plot_vec(axis, step, var):
     else:
         dipx = step.geom.nytot if step.geom.twod_yz else step.geom.nxtot
         dipx = int(dipx // 10 * conf.plot.ratio) + 1
+
     axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
-                vec1[::dipx, ::dipz], vec2[::dipx, ::dipz],
-                linewidths=1)
+                vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.003)
 
 
 def cmd():
