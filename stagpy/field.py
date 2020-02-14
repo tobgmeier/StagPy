@@ -128,6 +128,30 @@ def get_meshes_vec(step, var):
         vec2 = vec_phi * np.cos(pmesh) + vec_r * np.sin(pmesh)
     return xmesh, ymesh, vec1, vec2
 
+def get_meshes_vec_spherical(step, var):
+    """Return vector field components along with coordinates meshes.
+
+    Only works properly in 2D spherical
+
+    Args:
+        step (:class:`~stagpy.stagyydata._Step`): a step of a StagyyData
+            instance.
+        var (str): vector field name.
+    Returns:
+        tuple of :class:`numpy.array`: rmesh, pmesh, fldr, fldp
+            2D arrays containing respectively the x position, y position, x
+            component and y component of the requested vector field.
+    """
+
+    xmesh, ymesh = step.geom.x_mesh[0, :, :], step.geom.y_mesh[0, :, :]
+    pmesh = step.geom.p_mesh[0, :, :]
+    rmesh = step.geom.r_mesh[0,:,:]
+    vec_phi = step.fields[var + '2'][0, :, :, 0]
+    vec_r = step.fields[var + '3'][0, :, :, 0]
+    vec1 = vec_r * np.cos(pmesh) - vec_phi * np.sin(pmesh)
+    vec2 = vec_phi * np.cos(pmesh) + vec_r * np.sin(pmesh)
+    return xmesh, ymesh, vec1, vec2
+
 
 def set_of_vars(arg_plot):
     """Build set of needed field variables.
@@ -222,7 +246,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         vmax=conf.plot.vmax,
         norm=mpl.colors.LogNorm() if var == 'eta' else None,
         rasterized=conf.plot.raster,
-        shading='gouraud' if conf.field.interpolate else 'flat',
+        #shading='gouraud' if conf.field.interpolate else 'flat',
     )
     extra_opts.update(extra)
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
@@ -261,7 +285,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
     cbar.ax.tick_params(labelsize=text_size+1)
     cax2.axis('off')
 
-    nml = f90nml.read('par')
+    nml = step.sdat.par
 
     cax3 = divider.append_axes("bottom", size="9%", pad=+0.0)
     cax3.axis('off')
