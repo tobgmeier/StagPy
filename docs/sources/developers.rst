@@ -43,7 +43,7 @@ and update the needed packages::
 
     % python3 -m pip install -U --user sphinx sphinx-rtd-theme
 
-.. _Sphinx: http://www.sphinx-doc.org
+.. _Sphinx: https://www.sphinx-doc.org
 
 Then, in the ``docs`` directory, run::
 
@@ -86,3 +86,20 @@ directory of the repository and run::
 
 This should create a PDF file showing a plot of the temperature field with
 streamlines.
+
+Use as a Jupyter notebook kernel
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you want to access the virtual environment - and therefore the development
+version of StagPy - in a Jupyter notebook, run
+::
+
+    % make notebook-kernel
+
+This will create a new Jupyter kernel named ``stagpy-git`` you can use to
+access the virtual environment in a notebook.
+
+To remove that kernel, run
+::
+
+    % jupyter kernelspec uninstall stagpy-git

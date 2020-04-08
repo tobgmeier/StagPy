@@ -1,11 +1,14 @@
 """Plot scalar and vector fields."""
 
+from itertools import chain
+
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpat
 import math
 import os
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from . import conf, misc, phyvars
 from .error import NotAvailableError
@@ -176,6 +179,7 @@ def set_of_vars(arg_plot):
 
 
 def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_substellar = False, text_size = 9 , **extra):
+
     """Plot scalar field.
 
     Args:
@@ -252,9 +256,11 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
 
     cbar = None
+
     if conf.field.colorbar: #TGM: turned this off by default as it is plotted below (for now)
         print(conf.field.colorbar)
         cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb)
+
         cbar.set_label(meta.description +
                        (' pert.' if conf.field.perturbation else '') +
                        (' ({})'.format(unit) if unit else ''))
@@ -264,7 +270,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         axis.axis('off')
     else:
         axis.set_aspect(conf.plot.ratio / axis.get_data_ratio())
-    
+
     axis.set_adjustable('box')
     axis.set_xlim(xmin, xmax)
     axis.set_ylim(ymin, ymax)
@@ -363,6 +369,25 @@ def plot_vec(axis, step, var):
                 vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.003)
 
 
+def _findminmax(sdat, sovs):
+    """Find min and max values of several fields."""
+    minmax = {}
+    for step in sdat.walk.filter(snap=True):
+        for var in sovs:
+            if var in step.fields:
+                if var in phyvars.FIELD:
+                    dim = phyvars.FIELD[var].dim
+                else:
+                    dim = phyvars.FIELD_EXTRA[var].dim
+                field, _ = sdat.scale(step.fields[var], dim)
+                if var in minmax:
+                    minmax[var] = (min(minmax[var][0], np.nanmin(field)),
+                                   max(minmax[var][1], np.nanmax(field)))
+                else:
+                    minmax[var] = np.nanmin(field), np.nanmax(field)
+    return minmax
+
+
 def cmd():
     """Implementation of field subcommand.
 
@@ -371,37 +396,38 @@ def cmd():
         conf.core
     """
     sdat = StagyyData()
-    sovs = set_of_vars(conf.field.plot)
+    lovs = misc.list_of_vars(conf.field.plot)
+    # no more than two fields in a subplot
+    lovs = [[slov[:2] for slov in plov] for plov in lovs]
     minmax = {}
     if conf.plot.cminmax:
         conf.plot.vmin = None
         conf.plot.vmax = None
-        for step in sdat.walk.filter(snap=True):
-            for var, _ in sovs:
-                if var in step.fields:
-                    if var in phyvars.FIELD:
-                        dim = phyvars.FIELD[var].dim
-                    else:
-                        dim = phyvars.FIELD_EXTRA[var].dim
-                    field, _ = sdat.scale(step.fields[var], dim)
-                    if var in minmax:
-                        minmax[var] = (min(minmax[var][0], np.nanmin(field)),
-                                       max(minmax[var][1], np.nanmax(field)))
-                    else:
-                        minmax[var] = np.nanmin(field), np.nanmax(field)
+        sovs = set(slov[0] for plov in lovs for slov in plov)
+        minmax = _findminmax(sdat, sovs)
     for step in sdat.walk.filter(snap=True):
-        for var in sovs:
-            if var[0] not in step.fields:
-                print("'{}' field on snap {} not found".format(var[0],
-                                                               step.isnap))
-                continue
-            opts = {}
-            if var[0] in minmax:
-                opts = dict(vmin=minmax[var[0]][0], vmax=minmax[var[0]][1])
-            fig, axis, _, _ = plot_scalar(step, var[0], **opts)
-            if valid_field_var(var[1]):
-                plot_iso(axis, step, var[1])
-            elif var[1]:
-                plot_vec(axis, step, var[1])
-            oname = '{}_{}'.format(*var) if var[1] else var[0]
+        for vfig in lovs:
+            fig, axes = plt.subplots(ncols=len(vfig), squeeze=False,
+                                     figsize=(9 * len(vfig), 6))
+            for axis, var in zip(axes[0], vfig):
+                if var[0] not in step.fields:
+                    print("'{}' field on snap {} not found".format(var[0],
+                                                                   step.isnap))
+                    continue
+                opts = {}
+                if var[0] in minmax:
+                    opts = dict(vmin=minmax[var[0]][0], vmax=minmax[var[0]][1])
+                plot_scalar(step, var[0], axis=axis, **opts)
+                if len(var) == 2:
+                    if valid_field_var(var[1]):
+                        plot_iso(axis, step, var[1])
+                    elif valid_field_var(var[1] + '1'):
+                        plot_vec(axis, step, var[1])
+            if conf.field.timelabel:
+                time, unit = sdat.scale(step.timeinfo['t'], 's')
+                time = misc.scilabel(time)
+                axes[0, 0].text(0.02, 1.02, '$t={}$ {}'.format(time, unit),
+                                transform=axes[0, 0].transAxes)
+            oname = '_'.join(chain.from_iterable(vfig))
+            plt.tight_layout(w_pad=3)
             misc.saveplot(fig, oname, step.isnap)

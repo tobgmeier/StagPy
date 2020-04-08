@@ -7,7 +7,7 @@
    :alt: Travis CI
 
 .. image:: https://readthedocs.org/projects/stagpy/badge/?version=latest
-   :target: http://stagpy.readthedocs.org/en/latest/?badge=latest
+   :target: https://stagpy.readthedocs.org/en/latest/?badge=latest
    :alt: Documentation Status
 
 .. image:: https://badge.fury.io/py/stagpy.svg
