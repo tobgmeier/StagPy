@@ -523,6 +523,7 @@ class StagyyData:
                         'ls': UNDETERMINED}
         self._stagdat = {'par': parfile.readpar(self.parpath, self.path),
                          'tseries': UNDETERMINED,
+                         'plateanalyse': UNDETERMINED,
                          'rprof': UNDETERMINED}
         self.scales = _Scales(self)
         self.refstate = _Refstate(self)
@@ -574,6 +575,7 @@ class StagyyData:
         """
         return self._stagdat['par']
 
+
     @property
     def tseries(self):
         """Time series data.
@@ -594,6 +596,30 @@ class StagyyData:
             self._stagdat['tseries'] = stagyyparsers.time_series(
                 timefile, list(phyvars.TIME.keys()))
         return self._stagdat['tseries']
+
+
+    @property
+    def plateanalyse(self):
+        """Plate analyse series data.
+
+        This is a :class:`pandas.DataFrame` with istep as index and variable
+        names as columns.
+        """
+        if self._stagdat['plateanalyse'] is UNDETERMINED:
+            platefile = self.filename('PlateAnalyse.h5')
+            self._stagdat['plateanalyse'] = stagyyparsers.plate_analyse_h5(
+                platefile, list(phyvars.PLATE_ANALYSE.keys()))
+            if self._stagdat['plateanalyse'] is not None:
+                return self._stagdat['plateanalyse']
+            platefile = self.filename('plates_analyse.dat')
+            if self.hdf5 and not platefile.is_file():
+                # check legacy folder as well
+                platefile = self.filename('plates_analyse.dat', force_legacy=True)
+            self._stagdat['plateanalyse'] = stagyyparsers.plate_analyse(
+                platefile, list(phyvars.PLATE_ANALYSE.keys()))
+        return self._stagdat['plateanalyse']
+
+
 
     @property
     def _rprof_and_times(self):

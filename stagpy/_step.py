@@ -420,6 +420,17 @@ class Step:
             return None
         return self.sdat.tseries.loc[self.istep]
 
+
+    @property
+    def plateinfo(self):
+        """Plate analysis series data of the time step.
+
+        Set to None if no time series data is available for this time step.
+        """
+        if self.istep not in self.sdat.plateanalyse.index:
+            return None
+        return self.sdat.plateanalyse.loc[self.istep]
+
     @property
     def rprof(self):
         """Radial profiles data of the time step.

@@ -257,6 +257,17 @@ PLATES = OrderedDict((
     ('ed', Varp('Strain rate')),
 ))
 
+Varpa = namedtuple('Varpa', ['description', 'kind', 'dim'])
+PLATE_ANALYSE = OrderedDict((
+    ('t', Vart('Time', 'Time', 's')),
+    ('Rtp_vol', Vart('volume average rms vt/vp', 'Rtp_vol ', '1')),
+    ('Rtp_surf', Vart('surface average rms vt/vp', 'Rtp_surf ', '1')),
+    ('mobility', Vart('Mobility', 'Mobility ', '1')),
+    ('P_total', Vart('Total plateness', 'Plateness ', '1')),
+    ('P_day', Vart('Plateness dayside', 'Plateness', '1')),
+    ('P_night', Vart('Plateness nightside', 'Plateness', '1')),
+))
+
 SCALES = {
     'm': attrgetter('length'),
     'kg/m3': attrgetter('density'),

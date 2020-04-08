@@ -150,6 +150,9 @@ def var_cmd():
     if print_all or conf.var.plates:
         print('plates:')
         _layout(phyvars.PLATES, {})
+    if print_all or conf.var.plate_analyse:
+        print('plate_analysis:')
+        _layout(phyvars.PLATE_ANALYSE, {})
 
 
 def version_cmd():

@@ -80,9 +80,83 @@ def time_series(timefile, colnames):
 
     return data
 
+def plate_analyse(platefile, colnames):
+    """Read plate series text file.
 
-def time_series_h5(timefile, colnames):
+    If :data:`colnames` is too long, it will be truncated. If it is too short,
+    additional numeric column names from 0 to N-1 will be attributed to the N
+    extra columns present in :data:`platefile`.
+
+    Args:
+        plate (:class:`pathlib.Path`): path of the plate_analyse.dat file.
+        colnames (list of names): names of the variables expected in
+            :data:`platefile` (may be modified).
+
+    Returns:
+        :class:`pandas.DataFrame`:
+            Plate series, with the variables in columns and the time steps in
+            rows.
+    """
+    if not platefile.is_file():
+        return None
+    data = pd.read_csv(platefile, delim_whitespace=True, dtype=str,
+                       header=None, skiprows=1, index_col=0,
+                       engine='c', memory_map=True,
+                       error_bad_lines=False, warn_bad_lines=False)
+    data = data.apply(pd.to_numeric, raw=True, errors='coerce')
+
+    # detect useless lines produced when run is restarted
+    rows_to_del = []
+    irow = len(data) - 1
+    while irow > 0:
+        iprev = irow - 1
+        while iprev >= 0 and data.index[irow] <= data.index[iprev]:
+            rows_to_del.append(iprev)
+            iprev -= 1
+        irow = iprev
+    if rows_to_del:
+        rows_to_keep = set(range(len(data))) - set(rows_to_del)
+        data = data.take(list(rows_to_keep))
+
+    ncols = data.shape[1]
+    _tidy_names(colnames, ncols)
+    data.columns = colnames
+
+    return data
+
+
+def time_series_h5(platefile, colnames):
     """Read temporal series HDF5 file.
+
+    If :data:`colnames` is too long, it will be truncated. If it is too short,
+    additional column names will be deduced from the content of the file.
+
+    Args:
+        platefile (:class:`pathlib.Path`): path of the TimeSeries.h5 file.
+        colnames (list of names): names of the variables expected in
+            :data:`timefile` (may be modified).
+
+    Returns:
+        :class:`pandas.DataFrame`:
+            Plate analyse series, with the variables in columns and the time steps in
+            rows.
+    """
+    if not platefile.is_file():
+        return None
+    with h5py.File(timefile, 'r') as h5f:
+        dset = h5f['plateanalyse']
+        _, ncols = dset.shape
+        ncols -= 1  # first is istep
+        h5names = map(bytes.decode, h5f['names'][len(colnames) + 1:])
+        _tidy_names(colnames, ncols, h5names)
+        data = dset[()]
+    pdf = pd.DataFrame(data[:, 1:],
+                       index=np.int_(data[:, 0]), columns=colnames)
+    # remove duplicated lines in case of restart
+    return pdf.loc[~pdf.index.duplicated(keep='last')]
+
+def plate_analyse_h5(timefile, colnames):
+    """Read plate series HDF5 file.
 
     If :data:`colnames` is too long, it will be truncated. If it is too short,
     additional column names will be deduced from the content of the file.

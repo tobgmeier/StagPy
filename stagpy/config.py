@@ -230,6 +230,8 @@ CONF_DEF['var'] = OrderedDict((
                       False, 'print refstate variables')),
     ('plates', Conf(None, True, None, {'action': 'store_true'},
                     False, 'print plates variables')),
+    ('plate_analyse', Conf(None, True, None, {'action': 'store_true'},
+                    False, 'print plate analysis variables')),
 ))
 
 CONF_DEF['config'] = config_conf_section()
