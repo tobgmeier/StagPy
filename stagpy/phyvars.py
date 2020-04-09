@@ -41,6 +41,8 @@ FIELD = OrderedDict((
     ('rsc', Varf('Continuity residue', '1')),
     ('mf', Varf('Melt fraction', '1')),
     ('hf', Varf('Heat Flux', 'W/m2')),
+    ('pf', Varf('Plasticity fraction', '1')),
+
 
 ))
 
@@ -64,6 +66,7 @@ FIELD_FILES = OrderedDict((
     ('ed', ['edot']),
     ('tcond', ['Tcond1', 'Tcond2', 'Tcond3']),
     ('f', ['mf']),
+    ('pf', ['pf']),
     ('hf', ['hf']),
 ))
 
@@ -87,6 +90,7 @@ FIELD_FILES_H5 = OrderedDict((
     ('StrainRate', ['edot']),
     ('MeltFrac', ['mf']),
     ('SurfaceHeatFlux', ['hf']),
+    ('Plastic_fraction', ['pf']),
 ))
 
 SFIELD = OrderedDict((
