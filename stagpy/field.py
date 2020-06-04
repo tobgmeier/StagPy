@@ -178,7 +178,7 @@ def set_of_vars(arg_plot):
     return sovs
 
 
-def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_substellar = False, text_size = 9 , **extra):
+def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_substellar = False,draw_circle = False, text_size = 9 , **extra):
 
     """Plot scalar field.
 
@@ -302,7 +302,11 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
     radius  = nml['geometry']['r_cmb']+nml['geometry']['d_dimensional']
     rdim  = nml['geometry']['d_dimensional']
     rcmb = nml['geometry']['r_cmb']
+    rppv = rcmb+(rdim-2740e3*0.613125)
     rda = 0.5*(1-rcmb/(rcmb+rdim)) + 0.005 # without 0.03 this is the rdimensional in the axis system.
+    if draw_circle == True:
+        circle1 = plt.Circle((0, 0), rppv, edgecolor='w', linestyle = '--', fill=False, linewidth=0.5)
+        axis.add_artist(circle1)
     if print_substellar == True:
         cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
         #cax3.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
@@ -354,7 +358,7 @@ def plot_vec(axis, step, var):
     """
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
 
-    dipz = step.geom.nztot // 5
+    dipz = step.geom.nztot // 8
     sp = 1.0
     if conf.field.shift:
         vec1 = np.roll(vec1, conf.field.shift, axis=0)
