@@ -368,10 +368,10 @@ def plot_vec(axis, step, var):
     else:
         dipx = step.geom.nytot if step.geom.twod_yz else step.geom.nxtot
         dipx = int(dipx // 10 * conf.plot.ratio) + 1
-
-    axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
+    Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                 vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.003)
-
+    qk = axis.quiverkey(Q, 0.7, 0.8, 0.5*3.171e-10, r'$0.5 \frac{cm}{yr}$', labelpos='E',
+                   coordinates='figure',labelsep=0.01)
 
 def _findminmax(sdat, sovs):
     """Find min and max values of several fields."""
