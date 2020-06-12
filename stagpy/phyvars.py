@@ -20,6 +20,7 @@ FIELD = OrderedDict((
     ('eta', Varf('Viscosity', 'Pa.s')),
     ('rho', Varf('Density', 'kg/m3')),
     ('rho4rhs', Varf('Density term in RHS', 'kg/m3')),
+    ('trarho', Varf('Density from tracer mass', 'kg/m3')),
     ('sII', Varf('Second invariant of stress tensor', 'Pa')),
     ('sx1', Varf('1st comp. of principal stress eigenvector', 'Pa')),
     ('sx2', Varf('2nd comp. of principal stress eigenvector', 'Pa')),
@@ -80,6 +81,7 @@ FIELD_FILES_H5 = OrderedDict((
     ('Viscosity', ['eta']),
     ('Density', ['rho']),
     ('Density4rhs', ['rho4rhs']),
+    ('TraBasedDensity', ['trarho']),
     ('water', ['wtr']),
     ('Age', ['age']),
     ('ContinentNumber', ['contID']),
@@ -248,6 +250,7 @@ REFSTATE = OrderedDict((
     ('Cp', Varr('Heat capacity', 'Heat capacity', 'J/(kg.K)')),
     ('Tcond', Varr('Conductivity', 'Conductivity', 'W/(m.K)')),
     ('P', Varr('Pressure', 'Pressure', 'Pa')),
+    ('grav', Varr('Gravity', 'Gravity', 'm/s2')),
 ))
 
 Varp = namedtuple('Varp', ['description'])
@@ -286,6 +289,7 @@ SCALES = {
     '1/s': lambda scl: 1 / scl.time,
     'K/s': lambda scl: scl.temperature / scl.time,
     'm/s': lambda scl: scl.length / scl.time,
+    'm/s2': lambda scl: scl.length / scl.time**2,
 }
 
 PREFIXES = ('k', 'M', 'G')

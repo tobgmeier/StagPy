@@ -291,7 +291,7 @@ def rprof_h5(rproffile, colnames):
     if not rproffile.is_file():
         return None, None
     isteps = []
-    with h5py.File(rproffile) as h5f:
+    with h5py.File(rproffile, 'r') as h5f:
         dnames = sorted(dname for dname in h5f.keys()
                         if dname.startswith('rprof_'))
         ncols = h5f['names'].shape[0]
@@ -325,7 +325,7 @@ def _clean_names_refstate(names):
     return [to_clean.get(n, n) for n in names]
 
 
-def refstate(reffile, ncols=7):
+def refstate(reffile, ncols=8):
     """Extract reference state profiles.
 
     Args:
@@ -725,7 +725,6 @@ def _read_coord_h5(files, shapes, header, twod):
     if header['rcmb'] == 0:
         header['rcmb'] = -1
     else:
-        # could make the difference between r_coord and z_coord
         header['e3_coord'] = header['e3_coord'] - header['rcmb']
     if twod is None or 'X' in twod:
         header['e1_coord'] = header['e1_coord'][:-1]
@@ -887,7 +886,7 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None):
             elif shp[-1] == 1:  # XZ
                 fld = fld.reshape((shp[0], shp[1], 1, shp[2]))
                 if header['rcmb'] < 0:
-                    fld = fld[(0, 2, 1), ...]
+                    fld = fld[(1, 2, 0), ...]
             elif header['nts'][1] == 1:  # cart XZ
                 fld = fld.reshape((1, shp[0], 1, shp[1]))
             ifs = [icore // np.prod(header['ncs'][:i]) % header['ncs'][i] *
