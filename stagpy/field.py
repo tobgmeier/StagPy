@@ -178,7 +178,7 @@ def set_of_vars(arg_plot):
     return sovs
 
 
-def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_substellar = False,draw_circle = False, text_size = 9 , **extra):
+def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_substellar = False,draw_circle = False, text_size = 9 ,paper_label = None,cbar_remove = False, cbar_invisible = False,more_info=False, **extra):
 
     """Plot scalar field.
 
@@ -278,23 +278,22 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
     divider = make_axes_locatable(axis)
     #cax = divider.append_axes("right", size="5%", pad=+0.05)
     #cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb,orientation="vertical", cax=cax)
-    cax = divider.append_axes("bottom", size="5%", pad=+0.05)
+    
+    cax = divider.append_axes("bottom", size="5%", pad=+0.05)    
     cbar = plt.colorbar(surf,orientation="horizontal", cax=cax)
-
-
-    #cbar.set_label('T [K]')
     cbar.set_label(meta.description +
                (' pert.' if conf.field.perturbation else '') +
                (' ({})'.format(unit) if unit else '') +
                (' [' + meta.dim + ']' if meta.dim != '1' else ' [ ]'), size = text_size)
-    cax2 = divider.append_axes("top", size="8%", pad=+0.0)
     cbar.ax.tick_params(labelsize=text_size+1)
+
+
+    cax2 = divider.append_axes("top", size="6%", pad=+0.0)
+
     cax2.axis('off')
 
     nml = step.sdat.par
 
-    cax3 = divider.append_axes("bottom", size="9%", pad=+0.0)
-    cax3.axis('off')
     eta0 = str(int(math.log10(nml['viscosity']['eta0'])))
     Tcmb = str(int(nml['boundaries']['botT_val']))
     Tday = str(int(nml['boundaries']['topT_locked_subsolar']))
@@ -309,22 +308,36 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         axis.add_artist(circle1)
     if print_substellar == True:
         cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
-        #cax3.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color='black')
-        cax2.text(0.48, 0.25, 'day', horizontalalignment='right', verticalalignment='center', size = text_size,transform=cax2.transAxes)
-        cax2.text(0.52, 0.25, 'night', horizontalalignment='left', verticalalignment='center', size = text_size, transform=cax2.transAxes)
+        cax2.text(0.48, 0.3, 'Day', horizontalalignment='right', verticalalignment='center', size = text_size,transform=cax2.transAxes)
+        cax2.text(0.52, 0.3, 'Night', horizontalalignment='left', verticalalignment='center', size = text_size, transform=cax2.transAxes)
         bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='y')
-        axis.text(-radius-0.07*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black')
+        axis.text(-radius-0.06*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black')
         axis.text(rda , 0.5, "90$\degree$", ha="left", va="center", color='black',size=text_size,transform=axis.transAxes)
         axis.text(1-rda, 0.5, "270$\degree$", ha="right", va="center", color='black',size=text_size,transform=axis.transAxes)
         axis.text(0.5 , 1-rda, "180$\degree$", ha="center", va="top", color='black',size=text_size,transform=axis.transAxes)
         axis.text(0.5, rda, "0$\degree$", ha="center", va="bottom", color='black',size=text_size,transform=axis.transAxes)
     if print_time >= 0 :
+        if paper_label != None:
+            cax2.text(1.0, 0.25, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center', size = text_size)
+            cax2.text(0.0, 0.25, '('+paper_label+')',horizontalalignment='left',verticalalignment='center', size = text_size)
+            if more_info == True:
+                axis.text(0.0, 0.0, '(Fe,Ni Core)',horizontalalignment='center',verticalalignment='center', size = text_size)
+                axis.text(0.5, rda+0.045, "(Longitude)", ha="center", va="bottom", color='black',size=text_size-2,transform=axis.transAxes)
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
-        cax2.text(0.5, 1.2, '{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center',verticalalignment='center', size = text_size)
+        else:
+            cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center', size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
-
-
+    if cbar_remove == True:
+        cbar.remove()
+        cax.axis('off')
+    if cbar_invisible == True:
+        cbar.remove()
+        cax4 = divider.append_axes("bottom", size="5%", pad=+0.05,frameon=False)
+        cax4.set_xlabel('Temperature',alpha=0)
+        cax4.set_xticks([])
+        cax4.set_yticks([])
+        #cax4.axis('off')
     return fig, axis, surf, cbar
 
 
