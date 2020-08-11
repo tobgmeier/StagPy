@@ -280,13 +280,14 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
     #cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb,orientation="vertical", cax=cax)
     
     cax = divider.append_axes("bottom", size="5%", pad=+0.05)    
-    cbar = plt.colorbar(surf,orientation="horizontal", cax=cax)
+    cbar = plt.colorbar(surf,orientation="horizontal",cax=cax)
     cbar.set_label(meta.description +
                (' pert.' if conf.field.perturbation else '') +
                (' ({})'.format(unit) if unit else '') +
                (' [' + meta.dim + ']' if meta.dim != '1' else ' [ ]'),color=text_color, size = text_size)
     cbar.ax.tick_params(labelsize=text_size+1, color=text_color)
     cbar.outline.set_edgecolor(text_color)
+    #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
     cbar.ax.xaxis.set_tick_params(color=text_color)
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
 
@@ -311,21 +312,21 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         axis.add_artist(circle1)
     if print_substellar == True:
         cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color=text_color)
-        cax2.text(0.48, 0.3, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
-        cax2.text(0.52, 0.3, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
+        cax2.text(0.48, 0.4, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
+        cax2.text(0.52, 0.4, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
         bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='y')
-        axis.text(-radius-0.06*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color=text_color)
+        axis.text(-radius-0.095*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color=text_color)
         axis.text(rda , 0.5, "90$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(1-rda, 0.5, "270$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(1-rda+0.005, 0.5, "270$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(0.5 , 1-rda, "180$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(0.5, rda, "0$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
     if print_time >= 0 :
         if paper_label != None:
-            cax2.text(1.0, 0.25, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
-            cax2.text(0.0, 0.25, '('+paper_label+')',horizontalalignment='left',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(0.0, 0.4, '('+paper_label+')',horizontalalignment='left',verticalalignment='center',color=text_color, size = text_size,fontweight='bold')
             if more_info == True:
-                axis.text(0.0, 0.0, '(Fe,Ni Core)',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
-                axis.text(0.5, rda+0.045, "(Longitude)", ha="center", va="bottom",color=text_color,size=text_size-2,transform=axis.transAxes)
+                axis.text(0.5, rda+0.055, "(Longitude)", ha="center", va="bottom",color=text_color,size=text_size,transform=axis.transAxes)
+                axis.text(0.0, 0.0, '(Fe Core)',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         else:
             cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
