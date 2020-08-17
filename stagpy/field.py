@@ -371,7 +371,7 @@ def plot_iso(axis, step, var, **extra):
     axis.contour(xmesh, ymesh, fld, **extra_opts)
 
 
-def plot_vec(axis, step, var):
+def plot_vec(axis, step, var,arrow_v=0.5):
     """Plot vector field.
 
     Args:
@@ -396,8 +396,8 @@ def plot_vec(axis, step, var):
         dipx = int(dipx // 10 * conf.plot.ratio) + 1
     Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                 vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.003)
-    qk = axis.quiverkey(Q, 0.7, 0.8, 0.5*3.171e-10, r'$0.5 \frac{cm}{yr}$', labelpos='E',
-                   coordinates='figure',labelsep=0.01)
+    qk = axis.quiverkey(Q, 0.7, 0.8, arrow_v*3.171e-10, r'${0} \frac{{cm}}{{yr}}$'.format(arrow_v), labelpos='E',
+                   coordinates='figure',labelsep=0.01) 
 
 def _findminmax(sdat, sovs):
     """Find min and max values of several fields."""
