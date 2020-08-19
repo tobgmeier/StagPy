@@ -461,3 +461,8 @@ def cmd():
             oname = '_'.join(chain.from_iterable(vfig))
             plt.tight_layout(w_pad=3)
             misc.saveplot(fig, oname, step.isnap)
+
+def get_surfaceheatflux(step, var):
+    surface_fld = step.surffields[var]
+    return surface_fld
+

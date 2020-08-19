@@ -41,7 +41,6 @@ FIELD = OrderedDict((
     ('rs3', Varf('z Momentum residue', '1')),
     ('rsc', Varf('Continuity residue', '1')),
     ('mf', Varf('Melt fraction', '1')),
-    ('hf', Varf('Heat Flux', 'W/m2')),
     ('pf', Varf('Plasticity fraction', '1')),
 
 
@@ -91,9 +90,9 @@ FIELD_FILES_H5 = OrderedDict((
     ('PrincipalStressAxis', ['sx1', 'sx2', 'sx3']),
     ('StrainRate', ['edot']),
     ('MeltFrac', ['mf']),
-    ('SurfaceHeatFlux', ['hf']),
     ('Plastic_fraction', ['pf']),
 ))
+
 
 SFIELD = OrderedDict((
     ('topo_top', Varf('Topography at top', 'm')),
@@ -116,6 +115,10 @@ SFIELD_FILES = OrderedDict((
     ('hf', ['fbot', 'ftop']),
     ('hfs', ['fsbot', 'fstop']),
     ('cr', ['crust']),
+))
+
+SFIELD_FILES_H5 = OrderedDict((
+    ('TopHeatFlux', ['ftop']),
 ))
 
 Varr = namedtuple('Varr', ['description', 'kind', 'dim'])

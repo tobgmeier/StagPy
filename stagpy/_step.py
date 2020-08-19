@@ -361,6 +361,114 @@ class _Tracers:
     def __iter__(self):
         raise TypeError('tracers collection is not iterable')
 
+class _SurfFields(Mapping):
+    """Surface Fields data structure.
+
+    The :attr:`Step.surffields` attribute is an instance of this class.
+
+    :class:`_SurfFields` inherits from :class:`collections.abc.Mapping`. Keys are
+    fields names defined in :data:`stagpy.phyvars.SFIELD`.
+
+    Attributes:
+        step (:class:`Step`): the step object owning the :class:`_SurfFields`
+            instance.
+    """
+
+    def __init__(self, step, variables, extravars, files, filesh5):
+        self.step = step
+        self._header = UNDETERMINED
+        self._geom = UNDETERMINED
+        self._vars = variables
+        self._extra = extravars
+        self._files = files
+        self._filesh5 = filesh5
+        self._data = {}
+        super().__init__()
+
+    def __getitem__(self, name):
+        if name in self._data:
+            return self._data[name]
+        if name in self._vars:
+            fld_names, parsed_data = self._get_raw_data(name)
+        elif name in self._extra:
+            self._data[name] = self._extra[name].description(self.step)
+            return self._data[name]
+        else:
+            raise error.UnknownFieldVarError(name)
+        if parsed_data is None:
+            raise error.MissingDataError('Missing surface field {} in step {}'
+                                         .format(name, self.step.istep))
+        fields = parsed_data
+        for fld_name, fld in zip(fld_names, fields):
+            self._set(fld_name, fld)
+        return self._data[name]
+
+    def __iter__(self):
+        return (fld for fld in chain(self._vars, self._extra)
+                if fld in self)
+
+    def __contains__(self, item):
+        try:
+            return self[item] is not None
+        except error.StagpyError:
+            return False
+
+    def __len__(self):
+        return len(iter(self))
+
+    def __eq__(self, other):
+        return self is other
+
+    def _get_raw_data(self, name):
+        """Find file holding data and return its content."""
+        #hdf5
+        for filestem, list_fvar in self._filesh5.items():
+            if name in list_fvar:
+                break
+        parsed_data = stagyyparsers.read_surffield_h5(
+            self.step.sdat.hdf5 / 'DataSurface.xmf', filestem, self.step.isnap)
+        return list_fvar, parsed_data
+
+    def _set(self, name, fld):
+        sdat = self.step.sdat
+        col_fld = sdat._collected_fields
+        col_fld.append((self.step.istep, name))
+        if sdat.nfields_max is not None:
+            while len(col_fld) > sdat.nfields_max:
+                istep, fld_name = col_fld.pop(0)
+                del sdat.steps[istep].fields[fld_name]
+        self._data[name] = fld
+
+    def __delitem__(self, name):
+        if name in self._data:
+            del self._data[name]
+
+    @property
+    def geom(self):
+        """Geometry information.
+
+        :class:`_Geometry` instance holding geometry information. It is
+        issued from binary files holding field information. It is set to
+        None if not available for this time step.
+        """
+        if self._header is UNDETERMINED:
+            binfiles = self.step.sdat._binfiles_set(self.step.isnap)
+            if binfiles:
+                self._header = stagyyparsers.fields(binfiles.pop(),
+                                                    only_header=True)
+            elif self.step.sdat.hdf5:
+                xmf = self.step.sdat.hdf5 / 'DataSurface.xmf'
+                self._header, _ = stagyyparsers.read_geom_h5(xmf,
+                                                             self.step.isnap)
+            else:
+                self._header = None
+        if self._geom is UNDETERMINED:
+            if self._header is None:
+                self._geom = None
+            else:
+                self._geom = _Geometry(self._header, self.step.sdat.par)
+        return self._geom
+
 
 class Step:
     """Time step data structure.
@@ -408,6 +516,8 @@ class Step:
         self.sfields = _Fields(self, phyvars.SFIELD, [],
                                phyvars.SFIELD_FILES, [])
         self.tracers = _Tracers(self)
+        self.surffields = _SurfFields(self, phyvars.SFIELD, [],
+                               phyvars.SFIELD_FILES, phyvars.SFIELD_FILES_H5)
         self._isnap = UNDETERMINED
 
     @property

@@ -956,7 +956,8 @@ def read_time_h5(h5folder):
         for name, dset in h5f.items():
             yield int(name[-5:]), int(dset[2])
 
-def read_1d_field(h5folder, fieldname):  
+def read_1d_field(h5folder, fieldname):
+    #old - use hdf5 version (read_surffield_h5) instead
     filename = h5folder + "/"+fieldname+".dat"
     data = np.loadtxt(filename)
     zmax = int(np.max(data[:,0]))
@@ -967,6 +968,53 @@ def read_1d_field(h5folder, fieldname):
         field_1d = np.vstack((field_1d,row))
     return field_1d
 
+
+def read_surffield_h5(xdmf_file, fieldname, snapshot, header=None):
+    """Extract field data from hdf5 files.
+
+    Args:
+        xdmf_file (:class:`pathlib.Path`): path of the xdmf file.
+        fieldname (str): name of field to extract.
+        snapshot (int): snapshot number.
+        header (dict): geometry information.
+    Returns:
+        (dict, numpy.array): geometry information and field data. None
+            is returned if data is unavailable.
+    """
+
+    xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
+
+    '''
+    for sub in xdmf_root.findall("./Domain/Grid/"):
+        for data_attr in sub.findall('Time'):
+            print('test',data_attr.get('Value'))
+    '''
+    data_found = False
+
+    flds = []
+
+    for elt_subdomain in xdmf_root[0][0][snapshot].findall('Grid'):
+
+        for data_attr in elt_subdomain.findall('Attribute'):
+            if data_attr.get('Name') != fieldname:
+                continue
+            icore, fld = _get_field(xdmf_file, data_attr.find('DataItem'))
+            if icore != 0:
+                print('multiple cores not supported yet')
+                break
+
+
+            flds.append(fld) #this will need to change
+            data_found = True
+
+
+    return flds if data_found else None
+
+
+
+
+
+    
     
 
 
