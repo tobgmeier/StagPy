@@ -119,6 +119,7 @@ SFIELD_FILES = OrderedDict((
 
 SFIELD_FILES_H5 = OrderedDict((
     ('TopHeatFlux', ['ftop']),
+    ('BottomHeatFlux', ['fbot']),
 ))
 
 Varr = namedtuple('Varr', ['description', 'kind', 'dim'])

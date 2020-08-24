@@ -466,3 +466,6 @@ def get_surfaceheatflux(step, var):
     surface_fld = step.surffields[var]
     return surface_fld
 
+def get_cmbheatflux(step, var):
+    surface_fld = step.cmbfields[var]
+    return surface_fld
