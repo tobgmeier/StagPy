@@ -316,10 +316,10 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         cax2.text(0.52, 0.4, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
         bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='y')
         axis.text(-radius-0.095*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color=text_color)
-        axis.text(rda , 0.5, "90$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(1-rda+0.005, 0.5, "270$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(0.5 , 1-rda, "180$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(0.5, rda, "0$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
     if print_time >= 0 :
         if paper_label != None:
             cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
