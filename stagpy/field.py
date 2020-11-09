@@ -178,7 +178,7 @@ def set_of_vars(arg_plot):
     return sovs
 
 
-def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_substellar = False,draw_circle = False, text_size = 9 ,paper_label = None,cbar_remove = False, cbar_invisible = False,more_info=False,text_color = 'black', **extra):
+def plot_scalar(step, var, field=None, axis=None,print_time = None, print_substellar = False,draw_circle = False, text_size = 9 ,paper_label = None,cbar_remove = False, cbar_invisible = False,more_info=False,text_color = 'black', **extra):
 
     """Plot scalar field.
 
@@ -320,7 +320,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = -1.0, print_subste
         axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
-    if print_time >= 0 :
+    if print_time != None:
         if paper_label != None:
             cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
             cax2.text(0.0, 0.4, '('+paper_label+')',horizontalalignment='left',verticalalignment='center',color=text_color, size = text_size,fontweight='bold')
