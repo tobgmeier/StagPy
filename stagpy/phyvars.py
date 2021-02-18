@@ -118,8 +118,17 @@ SFIELD_FILES = OrderedDict((
 ))
 
 SFIELD_FILES_H5 = OrderedDict((
-    ('TopHeatFlux', ['ftop']),
+    ('BottomTopography', ['topo_bot']),
+    ('SurfaceTopography', ['topo_top']),
+    ('BottomGeoid', ['geoid_bot']),
+    ('TopGeoid', ['geoid_top']),
+    ('BottomCSGeoid', ['topo_g_bot']),
+    ('TopCSGeoid', ['topo_g_top']),
     ('BottomHeatFlux', ['fbot']),
+    ('TopHeatFlux', ['ftop']),
+    ('BottomHFSpectrum', ['fsbot']),
+    ('TopHFSpectrum', ['fstop']),
+    ('CrustThickness', ['crust']),
 ))
 
 Varr = namedtuple('Varr', ['description', 'kind', 'dim'])
@@ -193,7 +202,6 @@ RPROF = OrderedDict((
 ))
 
 RPROF_EXTRA = OrderedDict((
-    ('redges', Varr(processing.r_edges, 'Radius', 'm')),
     ('dr', Varr(processing.delta_r, 'dr', 'm')),
     ('diff', Varr(processing.diff_prof, 'Heat flux', 'W/m2')),
     ('diffs', Varr(processing.diffs_prof, 'Heat flux', 'W/m2')),

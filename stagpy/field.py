@@ -263,8 +263,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
 
         cbar.set_label(meta.description +
                        (' pert.' if conf.field.perturbation else '') +
-                       (' ({})'.format(unit) if unit else ''))
-    
+                       (f' ({unit})' if unit else ''))
     if step.geom.spherical or conf.plot.ratio is None:
         axis.axis('equal')
         axis.axis('off')
@@ -441,8 +440,7 @@ def cmd():
                                      figsize=(9 * len(vfig), 6))
             for axis, var in zip(axes[0], vfig):
                 if var[0] not in step.fields:
-                    print("'{}' field on snap {} not found".format(var[0],
-                                                                   step.isnap))
+                    print(f"{var[0]!r} field on snap {step.isnap} not found")
                     continue
                 opts = {}
                 if var[0] in minmax:
@@ -456,7 +454,7 @@ def cmd():
             if conf.field.timelabel:
                 time, unit = sdat.scale(step.timeinfo['t'], 's')
                 time = misc.scilabel(time)
-                axes[0, 0].text(0.02, 1.02, '$t={}$ {}'.format(time, unit),
+                axes[0, 0].text(0.02, 1.02, f'$t={time}$ {unit}',
                                 transform=axes[0, 0].transAxes)
             oname = '_'.join(chain.from_iterable(vfig))
             plt.tight_layout(w_pad=3)

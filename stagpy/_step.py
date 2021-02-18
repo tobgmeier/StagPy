@@ -7,19 +7,14 @@ Note:
 """
 
 from collections.abc import Mapping
+from collections import namedtuple
 from itertools import chain
 import re
 
 import numpy as np
 
-from . import error, phyvars, stagyyparsers
-
-
-UNDETERMINED = object()
-# dummy object with a unique identifier,
-# useful to mark stuff as yet undetermined,
-# as opposed to either some value or None if
-# non existent
+from . import error, misc, phyvars, stagyyparsers
+from .misc import CachedReadOnlyProperty as crop
 
 
 class _Geometry:
@@ -208,8 +203,6 @@ class _Fields(Mapping):
 
     def __init__(self, step, variables, extravars, files, filesh5):
         self.step = step
-        self._header = UNDETERMINED
-        self._geom = UNDETERMINED
         self._vars = variables
         self._extra = extravars
         self._files = files
@@ -228,17 +221,17 @@ class _Fields(Mapping):
         else:
             raise error.UnknownFieldVarError(name)
         if parsed_data is None:
-            raise error.MissingDataError('Missing field {} in step {}'
-                                         .format(name, self.step.istep))
+            raise error.MissingDataError(
+                f'Missing field {name} in step {self.step.istep}')
         header, fields = parsed_data
-        self._header = header
+        self._cropped__header = header
         for fld_name, fld in zip(fld_names, fields):
             if self._header['xyp'] == 0:
                 if not self.geom.twod_yz:
-                    newline = (fld[:1, :, :, :] + fld[-1:, :, :, :]) / 2
+                    newline = (fld[:1, ...] + fld[-1:, ...]) / 2
                     fld = np.concatenate((fld, newline), axis=0)
                 if not self.geom.twod_xz:
-                    newline = (fld[:, :1, :, :] + fld[:, -1:, :, :]) / 2
+                    newline = (fld[:, :1, ...] + fld[:, -1:, ...]) / 2
                     fld = np.concatenate((fld, newline), axis=1)
             self._set(fld_name, fld)
         return self._data[name]
@@ -277,8 +270,15 @@ class _Fields(Mapping):
             for filestem, list_fvar in self._filesh5.items():
                 if name in list_fvar:
                     break
+            if filestem in phyvars.SFIELD_FILES_H5:
+                xmff = 'Data{}.xmf'.format(
+                    'Bottom' if name.endswith('bot') else 'Surface')
+                header = self._header
+            else:
+                xmff = 'Data.xmf'
+                header = None
             parsed_data = stagyyparsers.read_field_h5(
-                self.step.sdat.hdf5 / 'Data.xmf', filestem, self.step.isnap)
+                self.step.sdat.hdf5 / xmff, filestem, self.step.isnap, header)
         return list_fvar, parsed_data
 
     def _set(self, name, fld):
@@ -295,7 +295,16 @@ class _Fields(Mapping):
         if name in self._data:
             del self._data[name]
 
-    @property
+    @crop
+    def _header(self):
+        binfiles = self.step.sdat._binfiles_set(self.step.isnap)
+        if binfiles:
+            return stagyyparsers.fields(binfiles.pop(), only_header=True)
+        elif self.step.sdat.hdf5:
+            xmf = self.step.sdat.hdf5 / 'Data.xmf'
+            return stagyyparsers.read_geom_h5(xmf, self.step.isnap)[0]
+
+    @crop
     def geom(self):
         """Geometry information.
 
@@ -303,23 +312,8 @@ class _Fields(Mapping):
         issued from binary files holding field information. It is set to
         None if not available for this time step.
         """
-        if self._header is UNDETERMINED:
-            binfiles = self.step.sdat._binfiles_set(self.step.isnap)
-            if binfiles:
-                self._header = stagyyparsers.fields(binfiles.pop(),
-                                                    only_header=True)
-            elif self.step.sdat.hdf5:
-                xmf = self.step.sdat.hdf5 / 'Data.xmf'
-                self._header, _ = stagyyparsers.read_geom_h5(xmf,
-                                                             self.step.isnap)
-            else:
-                self._header = None
-        if self._geom is UNDETERMINED:
-            if self._header is None:
-                self._geom = None
-            else:
-                self._geom = _Geometry(self._header, self.step.sdat.par)
-        return self._geom
+        if self._header is not None:
+            return _Geometry(self._header, self.step.sdat.par)
 
 
 class _Tracers:
@@ -361,221 +355,102 @@ class _Tracers:
     def __iter__(self):
         raise TypeError('tracers collection is not iterable')
 
-class _SurfFields(Mapping):
-    """Surface Fields data structure.
 
-    The :attr:`Step.surffields` attribute is an instance of this class.
 
-    :class:`_SurfFields` inherits from :class:`collections.abc.Mapping`. Keys are
-    fields names defined in :data:`stagpy.phyvars.SFIELD`.
 
-    Attributes:
-        step (:class:`Step`): the step object owning the :class:`_SurfFields`
-            instance.
-    """
+Rprof = namedtuple('Rprof', ['values', 'rad', 'meta'])
 
-    def __init__(self, step, variables, extravars, files, filesh5):
-        self.step = step
-        self._header = UNDETERMINED
-        self._geom = UNDETERMINED
-        self._vars = variables
-        self._extra = extravars
-        self._files = files
-        self._filesh5 = filesh5
-        self._data = {}
-        super().__init__()
 
-    def __getitem__(self, name):
-        if name in self._data:
-            return self._data[name]
-        if name in self._vars:
-            fld_names, parsed_data = self._get_raw_data(name)
-        elif name in self._extra:
-            self._data[name] = self._extra[name].description(self.step)
-            return self._data[name]
-        else:
-            raise error.UnknownFieldVarError(name)
-        if parsed_data is None:
-            raise error.MissingDataError('Missing surface field {} in step {}'
-                                         .format(name, self.step.istep))
-        fields = parsed_data
-        for fld_name, fld in zip(fld_names, fields):
-            self._set(fld_name, fld)
-        return self._data[name]
+class _Rprofs:
+    """Radial profiles data structure.
 
-    def __iter__(self):
-        return (fld for fld in chain(self._vars, self._extra)
-                if fld in self)
+    The :attr:`Step.rprofs` attribute is an instance of this class.
 
-    def __contains__(self, item):
-        try:
-            return self[item] is not None
-        except error.StagpyError:
-            return False
-
-    def __len__(self):
-        return len(iter(self))
-
-    def __eq__(self, other):
-        return self is other
-
-    def _get_raw_data(self, name):
-        """Find file holding data and return its content."""
-        #hdf5
-        for filestem, list_fvar in self._filesh5.items():
-            if name in list_fvar:
-                break
-        parsed_data = stagyyparsers.read_surffield_h5(
-            self.step.sdat.hdf5 / 'DataSurface.xmf', filestem, self.step.isnap)
-        return list_fvar, parsed_data
-
-    def _set(self, name, fld):
-        sdat = self.step.sdat
-        col_fld = sdat._collected_fields
-        col_fld.append((self.step.istep, name))
-        if sdat.nfields_max is not None:
-            while len(col_fld) > sdat.nfields_max:
-                istep, fld_name = col_fld.pop(0)
-                del sdat.steps[istep].fields[fld_name]
-        self._data[name] = fld
-
-    def __delitem__(self, name):
-        if name in self._data:
-            del self._data[name]
-
-    @property
-    def geom(self):
-        """Geometry information.
-
-        :class:`_Geometry` instance holding geometry information. It is
-        issued from binary files holding field information. It is set to
-        None if not available for this time step.
-        """
-        if self._header is UNDETERMINED:
-            binfiles = self.step.sdat._binfiles_set(self.step.isnap)
-            if binfiles:
-                self._header = stagyyparsers.fields(binfiles.pop(),
-                                                    only_header=True)
-            elif self.step.sdat.hdf5:
-                xmf = self.step.sdat.hdf5 / 'DataSurface.xmf'
-                self._header, _ = stagyyparsers.read_geom_h5(xmf,
-                                                             self.step.isnap)
-            else:
-                self._header = None
-        if self._geom is UNDETERMINED:
-            if self._header is None:
-                self._geom = None
-            else:
-                self._geom = _Geometry(self._header, self.step.sdat.par)
-        return self._geom
-
-class _CMBFields(Mapping):
-    """Surface Fields data structure.
-
-    The :attr:`Step.surffields` attribute is an instance of this class.
-
-    :class:`_SurfFields` inherits from :class:`collections.abc.Mapping`. Keys are
-    fields names defined in :data:`stagpy.phyvars.SFIELD`.
+    :class:`_Rprofs` implements the getitem mechanism.  Keys are profile names
+    defined in :data:`stagpy.phyvars.RPROF[_EXTRA]`.  An item is a named tuple
+    ('values', 'rad', 'meta'), respectively the profile itself, the radial
+    position at which it is evaluated, and meta is a
+    :class:`stagpy.phyvars.Varr` instance with relevant metadata.  Note that
+    profiles are automatically scaled if conf.scaling.dimensional is True.
 
     Attributes:
-        step (:class:`Step`): the step object owning the :class:`_SurfFields`
-            instance.
+        step (:class:`Step`): the step object owning the :class:`_Rprofs`
+            instance
     """
 
-    def __init__(self, step, variables, extravars, files, filesh5):
+    def __init__(self, step):
         self.step = step
-        self._header = UNDETERMINED
-        self._geom = UNDETERMINED
-        self._vars = variables
-        self._extra = extravars
-        self._files = files
-        self._filesh5 = filesh5
-        self._data = {}
-        super().__init__()
+        self._cached_extra = {}
 
-    def __getitem__(self, name):
-        if name in self._data:
-            return self._data[name]
-        if name in self._vars:
-            fld_names, parsed_data = self._get_raw_data(name)
-        elif name in self._extra:
-            self._data[name] = self._extra[name].description(self.step)
-            return self._data[name]
-        else:
-            raise error.UnknownFieldVarError(name)
-        if parsed_data is None:
-            raise error.MissingDataError('Missing surface field {} in step {}'
-                                         .format(name, self.step.istep))
-        fields = parsed_data
-        for fld_name, fld in zip(fld_names, fields):
-            self._set(fld_name, fld)
-        return self._data[name]
-
-    def __iter__(self):
-        return (fld for fld in chain(self._vars, self._extra)
-                if fld in self)
-
-    def __contains__(self, item):
-        try:
-            return self[item] is not None
-        except error.StagpyError:
-            return False
-
-    def __len__(self):
-        return len(iter(self))
-
-    def __eq__(self, other):
-        return self is other
-
-    def _get_raw_data(self, name):
-        """Find file holding data and return its content."""
-        #hdf5
-        for filestem, list_fvar in self._filesh5.items():
-            if name in list_fvar:
-                break
-        parsed_data = stagyyparsers.read_surffield_h5(
-            self.step.sdat.hdf5 / 'DataBottom.xmf', filestem, self.step.isnap)
-        return list_fvar, parsed_data
-
-    def _set(self, name, fld):
-        sdat = self.step.sdat
-        col_fld = sdat._collected_fields
-        col_fld.append((self.step.istep, name))
-        if sdat.nfields_max is not None:
-            while len(col_fld) > sdat.nfields_max:
-                istep, fld_name = col_fld.pop(0)
-                del sdat.steps[istep].fields[fld_name]
-        self._data[name] = fld
-
-    def __delitem__(self, name):
-        if name in self._data:
-            del self._data[name]
+    @crop
+    def _data(self):
+        step = self.step
+        return step.sdat._rprof_and_times[0].get(step.istep)
 
     @property
-    def geom(self):
-        """Geometry information.
+    def _rprofs(self):
+        if self._data is None:
+            step = self.step
+            raise error.MissingDataError(
+                f'No rprof data in step {step.istep} of {step.sdat}')
+        return self._data
 
-        :class:`_Geometry` instance holding geometry information. It is
-        issued from binary files holding field information. It is set to
-        None if not available for this time step.
+    def __getitem__(self, name):
+        step = self.step
+        if name in self._rprofs.columns:
+            rprof = self._rprofs[name].values
+            rad = self.centers
+            if name in phyvars.RPROF:
+                meta = phyvars.RPROF[name]
+            else:
+                meta = phyvars.Varr(name, None, '1')
+        elif name in self._cached_extra:
+            rprof, rad, meta = self._cached_extra[name]
+        elif name in phyvars.RPROF_EXTRA:
+            meta = phyvars.RPROF_EXTRA[name]
+            rprof, rad = meta.description(step)
+            meta = phyvars.Varr(misc.baredoc(meta.description),
+                                meta.kind, meta.dim)
+            self._cached_extra[name] = rprof, rad, meta
+        else:
+            raise error.UnknownRprofVarError(name)
+        rprof, _ = step.sdat.scale(rprof, meta.dim)
+        rad, _ = step.sdat.scale(rad, 'm')
+
+        return Rprof(rprof, rad, meta)
+
+    @crop
+    def centers(self):
+        """Radial position of cell centers."""
+        return self._rprofs['r'].values + self.bounds[0]
+
+    @crop
+    def walls(self):
+        """Radial position of cell walls."""
+        rbot, rtop = self.bounds
+        centers = self.centers
+        # assume walls are mid-way between T-nodes
+        # could be T-nodes at center between walls
+        walls = (centers[:-1] + centers[1:]) / 2
+        walls = np.insert(walls, 0, rbot)
+        walls = np.append(walls, rtop)
+        return walls
+
+    @crop
+    def bounds(self):
+        """Radial or vertical position of boundaries.
+
+        Radial/vertical positions of boundaries of the domain.
         """
-        if self._header is UNDETERMINED:
-            binfiles = self.step.sdat._binfiles_set(self.step.isnap)
-            if binfiles:
-                self._header = stagyyparsers.fields(binfiles.pop(),
-                                                    only_header=True)
-            elif self.step.sdat.hdf5:
-                xmf = self.step.sdat.hdf5 / 'DataBottom.xmf'
-                self._header, _ = stagyyparsers.read_geom_h5(xmf,
-                                                             self.step.isnap)
-            else:
-                self._header = None
-        if self._geom is UNDETERMINED:
-            if self._header is None:
-                self._geom = None
-            else:
-                self._geom = _Geometry(self._header, self.step.sdat.par)
-        return self._geom
+        step = self.step
+        if step.geom is not None:
+            rcmb = step.geom.rcmb
+        else:
+            rcmb = step.sdat.par['geometry']['r_cmb']
+            if step.sdat.par['geometry']['shape'].lower() == 'cartesian':
+                rcmb = 0
+        rcmb = max(rcmb, 0)
+        return rcmb, rcmb + 1
 
 
 class Step:
@@ -622,13 +497,18 @@ class Step:
         self.fields = _Fields(self, phyvars.FIELD, phyvars.FIELD_EXTRA,
                               phyvars.FIELD_FILES, phyvars.FIELD_FILES_H5)
         self.sfields = _Fields(self, phyvars.SFIELD, [],
-                               phyvars.SFIELD_FILES, [])
+                               phyvars.SFIELD_FILES, phyvars.SFIELD_FILES_H5)
         self.tracers = _Tracers(self)
-        self.surffields = _SurfFields(self, phyvars.SFIELD, [],
-                               phyvars.SFIELD_FILES, phyvars.SFIELD_FILES_H5)
-        self.cmbfields = _CMBFields(self, phyvars.SFIELD, [],
-                               phyvars.SFIELD_FILES, phyvars.SFIELD_FILES_H5)
-        self._isnap = UNDETERMINED
+
+        self.rprofs = _Rprofs(self)
+        self._isnap = -1
+
+    def __repr__(self):
+        if self.isnap is not None:
+            return f'{self.sdat!r}.snaps[{self.isnap}]'
+        else:
+            return f'{self.sdat!r}.steps[{self.istep}]'
+
 
     @property
     def geom(self):
@@ -642,13 +522,12 @@ class Step:
 
     @property
     def timeinfo(self):
-        """Time series data of the time step.
-
-        Set to None if no time series data is available for this time step.
-        """
-        if self.istep not in self.sdat.tseries.index:
-            return None
-        return self.sdat.tseries.loc[self.istep]
+        """Time series data of the time step."""
+        try:
+            info = self.sdat.tseries.at_step(self.istep)
+        except KeyError:
+            raise error.MissingDataError(f'No time series for {self!r}')
+        return info
 
 
     @property
@@ -662,14 +541,15 @@ class Step:
         return self.sdat.plateanalyse.loc[self.istep]
 
     @property
-    def rprof(self):
-        """Radial profiles data of the time step.
-
-        Set to None if no radial profiles data is available for this time step.
-        """
-        if self.istep not in self.sdat.rprof.index.levels[0]:
-            return None
-        return self.sdat.rprof.loc[self.istep]
+    def time(self):
+        """Time of this time step."""
+        steptime = None
+        try:
+            steptime = self.timeinfo['t']
+        except error.MissingDataError:
+            if self.isnap is not None:
+                steptime = self.geom.ti_ad
+        return steptime
 
     @property
     def isnap(self):
@@ -677,7 +557,7 @@ class Step:
 
         It is set to None if no snapshot exists for the time step.
         """
-        if self._isnap is UNDETERMINED:
+        if self._isnap == -1:
             istep = None
             isnap = -1
             # could be more efficient if do 0 and -1 then bisection

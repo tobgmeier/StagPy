@@ -1,6 +1,6 @@
 """Plate analysis."""
 
-import pathlib
+from contextlib import ExitStack
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -480,7 +480,7 @@ def plot_plates(step, time, vrms_surface, trench, ridge, agetrench,
 
 def io_surface(timestep, time, fid, fld):
     """Output surface files."""
-    fid.write("{} {}".format(timestep, time))
+    fid.write(f"{timestep} {time}")
     fid.writelines(["%10.2e" % item for item in fld[:]])
     fid.writelines(["\n"])
 
@@ -593,12 +593,11 @@ def main_plates(sdat):
     """Plot several plates information."""
     # calculating averaged horizontal surface velocity
     # needed for redimensionalisation
-    ilast = sdat.rprof.index.levels[0][-1]
-    rlast = sdat.rprof.loc[ilast]
+    rlast = sdat.snaps[-1].rprofs
     nprof = 0
-    uprof_averaged = rlast.loc[:, 'vhrms'] * 0
-    for step in sdat.walk.filter(rprof=True):
-        uprof_averaged += step.rprof['vhrms']
+    uprof_averaged = np.zeros_like(rlast['vhrms'].values)
+    for step in sdat.walk.filter(rprofs=True):
+        uprof_averaged += step.rprofs['vhrms'].values
         nprof += 1
     uprof_averaged /= nprof
     radius = rlast['r'].values
@@ -612,19 +611,19 @@ def main_plates(sdat):
         isurf = -1
         vrms_surface = uprof_averaged.iloc[isurf]
 
-    with misc.InchoateFiles(8, 'plates') as fids:
-        fids.fnames = ['plate_velocity', 'distance_subd', 'continents',
-                       'flux', 'topography', 'age', 'velderiv', 'velocity']
+    # determine names of files
+    fnames = ['plate_velocity', 'distance_subd', 'continents',
+              'flux', 'topography', 'age', 'velderiv', 'velocity']
+    fnames = [f'plates_{stem}_{sdat.walk.stepstr}' for stem in fnames]
+    with ExitStack() as stack:
+        fids = [stack.enter_context(open(fname)) for fname in fnames]
         fids[0].write('#  it  time  ph_trench vel_trench age_trench\n')
         fids[1].write('#  it      time   time [My]   distance     '
                       'ph_trench     ph_cont  age_trench [My]\n')
 
-        istart, iend = None, None
         for step in sdat.walk.filter(fields=['T']):
             # could check other fields too
             timestep = step.isnap
-            istart = timestep if istart is None else istart
-            iend = timestep
             print('Treating snapshot', timestep)
 
             rcmb = step.geom.rcmb
@@ -761,17 +760,6 @@ def main_plates(sdat):
 
                 misc.saveplot(fig, 'sx', timestep)
 
-        # determine names of files
-        ptn = misc.out_name('{}_{}_{}')
-        stem = ptn.format(fids.fnames[0], istart, iend)
-        idx = 0
-        fmt = '{}.dat'
-        while pathlib.Path(fmt.format(stem, idx)).is_file():
-            fmt = '{}_{}.dat'
-            idx += 1
-        fids.fnames = [fmt.format(ptn.format(fname, istart, iend), idx)
-                       for fname in fids.fnames]
-
 
 def cmd():
     """Implementation of plates subcommand.
@@ -840,4 +828,4 @@ def cmd():
             plt.plot(time, nb_plates)
             plt.subplot(122)
             plt.plot(time, ch2o)
-            misc.saveplot(figt, 'plates_{}_{}'.format(istart, iend))
+            misc.saveplot(figt, f'plates_{istart}_{iend}')
