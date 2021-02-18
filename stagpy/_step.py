@@ -202,6 +202,7 @@ class _Fields(Mapping):
     """
 
     def __init__(self, step, variables, extravars, files, filesh5):
+        print('hello')
         self.step = step
         self._vars = variables
         self._extra = extravars
@@ -256,6 +257,7 @@ class _Fields(Mapping):
         """Find file holding data and return its content."""
         # try legacy first, then hdf5
         filestem = ''
+        print('hello1')
         for filestem, list_fvar in self._files.items():
             if name in list_fvar:
                 break
@@ -271,6 +273,7 @@ class _Fields(Mapping):
                 if name in list_fvar:
                     break
             if filestem in phyvars.SFIELD_FILES_H5:
+                print('SURFACE')
                 xmff = 'Data{}.xmf'.format(
                     'Bottom' if name.endswith('bot') else 'Surface')
                 header = self._header
