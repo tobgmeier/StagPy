@@ -461,9 +461,7 @@ def cmd():
             misc.saveplot(fig, oname, step.isnap)
 
 def get_surfaceheatflux(step, var):
-    surface_fld = step.surffields[var]
+    surface_fld = step.sfields[var][0,:,0]
+    print('shape of surface field', np.shape(surface_fld))
     return surface_fld
 
-def get_cmbheatflux(step, var):
-    surface_fld = step.cmbfields[var]
-    return surface_fld
