@@ -871,8 +871,6 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None):
         header, xdmf_root = read_geom_h5(xdmf_file, snapshot)
     else:
         xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
-    print(fieldname)
-    print(xdmf_file)
     npc = header['nts'] // header['ncs']  # number of grid point per node
     flds = np.zeros(_flds_shape(fieldname, header))
     data_found = False
