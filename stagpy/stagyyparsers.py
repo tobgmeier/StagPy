@@ -10,7 +10,7 @@ from itertools import product
 from operator import itemgetter
 from xml.etree import ElementTree as xmlET
 import re
-
+import time
 import numpy as np
 import pandas as pd
 import h5py
@@ -425,6 +425,7 @@ def fields(fieldfile, only_header=False, only_istep=False):
         return None
     header = {}
     with fieldfile.open('rb') as fid:
+        print('READING')
         readbin = partial(_readbin, fid)
         magic = readbin()
         if magic > 8000:  # 64 bits
@@ -503,7 +504,7 @@ def fields(fieldfile, only_header=False, only_istep=False):
             nbk * nval
 
         header['scalefac'] = readbin('f') if nval > 1 else 1
-
+        print('npc', npc)
         flds = np.zeros((nval,
                          header['nts'][0] + header['xyp'],
                          header['nts'][1] + header['xyp'],
@@ -516,6 +517,7 @@ def fields(fieldfile, only_header=False, only_istep=False):
                             range(header['ncs'][1]),
                             range(header['ncs'][0])):
             # read the data for one CPU
+            print('icpu', icpu)
             data_cpu = readbin('f', npi) * header['scalefac']
 
             # icpu is (icpu block, icpu z, icpu y, icpu x)
@@ -637,6 +639,7 @@ def _ncores(meshes, twod):
            meshes[cpu(nns[2] - 1)]['Z'][0, 0, -1]):
         nns[2] += 1
         nnpb -= nns[0] * nns[1]
+    print('cores', nns)
     return np.array(nns)
 
 
@@ -763,7 +766,7 @@ def _maybe_get(elt, item, info, conversion=None):
     return maybe_item
 
 
-def read_geom_h5(xdmf_file, snapshot):
+def read_geom_h5(xdmf_file, snapshot,xdmf_root_input = None):
     """Extract geometry information from hdf5 files.
 
     Args:
@@ -773,7 +776,14 @@ def read_geom_h5(xdmf_file, snapshot):
         (dict, root): geometry information and root of xdmf document.
     """
     header = {}
-    xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
+    t1 = time.time()
+    if xdmf_root_input == None:
+        print('old xdmf_root')
+        xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
+    else: 
+        print('fast track')
+        xdmf_root = xdmf_root_input
+    print('time geom',time.time()-t1)
     if snapshot is None:
         return None, xdmf_root
 
@@ -855,7 +865,7 @@ def _post_read_flds(flds, header):
     return flds
 
 
-def read_field_h5(xdmf_file, fieldname, snapshot, header=None):
+def read_field_h5(xdmf_file, fieldname, snapshot, header=None,xdmf_root_input = None):
     """Extract field data from hdf5 files.
 
     Args:
@@ -867,16 +877,21 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None):
         (dict, numpy.array): geometry information and field data. None
             is returned if data is unavailable.
     """
+    print('h51')
     if header is None:
-        header, xdmf_root = read_geom_h5(xdmf_file, snapshot)
+        #t1 = time.time()
+        print('header is none')
+        header, xdmf_root = read_geom_h5(xdmf_file, snapshot,xdmf_root_input)
+        #print('timex = ', t1-time.time())
     else:
         xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
+    th = time.time()
     npc = header['nts'] // header['ncs']  # number of grid point per node
     flds = np.zeros(_flds_shape(fieldname, header))
     data_found = False
-
     for elt_subdomain in xdmf_root[0][0][snapshot].findall('Grid'):
         ibk = int(elt_subdomain.get('Name').startswith('meshYang'))
+        print('h5', xdmf_root)
         for data_attr in elt_subdomain.findall('Attribute'):
             if data_attr.get('Name') != fieldname:
                 continue
@@ -915,6 +930,7 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None):
     if fieldname in SFIELD_FILES_H5:
         # remove z component
         flds = flds[..., 0, :]
+    print('time needed after geom', time.time() - th)
     return (header, flds) if data_found else None
 
 
@@ -1023,6 +1039,10 @@ def read_surffield_h5(xdmf_file, fieldname, snapshot, header=None):
 
     return flds if data_found else None
 
+def read_xdmf_root(xdmf_file):
+    print('gettin xdmf root')
+    xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
+    return xdmf_root
 
 
 

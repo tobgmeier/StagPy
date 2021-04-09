@@ -12,7 +12,7 @@ from itertools import chain
 import re
 
 import numpy as np
-
+import time
 from . import error, misc, phyvars, stagyyparsers
 from .misc import CachedReadOnlyProperty as crop
 
@@ -214,6 +214,7 @@ class _Fields(Mapping):
         if name in self._data:
             return self._data[name]
         if name in self._vars:
+            print('GETITEM')
             fld_names, parsed_data = self._get_raw_data(name)
         elif name in self._extra:
             self._data[name] = self._extra[name].description(self.step)
@@ -255,6 +256,7 @@ class _Fields(Mapping):
     def _get_raw_data(self, name):
         """Find file holding data and return its content."""
         # try legacy first, then hdf5
+        print('get_raw_data')
         filestem = ''
         for filestem, list_fvar in self._files.items():
             if name in list_fvar:
@@ -262,11 +264,14 @@ class _Fields(Mapping):
         fieldfile = self.step.sdat.filename(filestem, self.step.isnap,
                                             force_legacy=True)
         if not fieldfile.is_file():
+            print('not field file')
             fieldfile = self.step.sdat.filename(filestem, self.step.isnap)
         parsed_data = None
         if fieldfile.is_file():
+            print('FIELDFILE')
             parsed_data = stagyyparsers.fields(fieldfile)
         elif self.step.sdat.hdf5 and self._filesh5:
+            print('HDF5 FILES')
             for filestem, list_fvar in self._filesh5.items():
                 if name in list_fvar:
                     break
@@ -279,7 +284,7 @@ class _Fields(Mapping):
                 xmff = 'Data.xmf'
                 header = None
             parsed_data = stagyyparsers.read_field_h5(
-                self.step.sdat.hdf5 / xmff, filestem, self.step.isnap, header)
+                self.step.sdat.hdf5 / xmff, filestem, self.step.isnap, header,xdmf_root_input = self.step.sdat.xdmf_root)
         return list_fvar, parsed_data
 
     def _set(self, name, fld):

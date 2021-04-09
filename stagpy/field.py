@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpat
 import math
 import os
+import time
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from . import conf, misc, phyvars
@@ -83,7 +84,9 @@ def get_meshes_fld(step, var):
             2D arrays containing respectively the x position, y position, and
             the value of the requested field.
     """
+    #t1 = time.time()
     fld = step.fields[var]
+    #print('time1', time.time()-t1)
     if step.geom.threed and step.geom.cartesian:
         (xmesh, ymesh), fld = _threed_extract(step, var)
     elif step.geom.twod_xz:
@@ -93,6 +96,7 @@ def get_meshes_fld(step, var):
         xmesh, ymesh = step.geom.y_mesh[0, :, :], step.geom.z_mesh[0, :, :]
         fld = fld[0, :, :, 0]
     else:  # spherical yz
+        print('spherical yz')
         xmesh, ymesh = step.geom.x_mesh[0, :, :], step.geom.y_mesh[0, :, :]
         fld = fld[0, :, :, 0]
     return xmesh, ymesh, fld
@@ -461,6 +465,7 @@ def cmd():
             misc.saveplot(fig, oname, step.isnap)
 
 def get_surfaceheatflux(step, var):
+    print('getting surface field')
     surface_fld = step.sfields[var][0,:,0]
     print('shape of surface field', np.shape(surface_fld))
     return surface_fld
