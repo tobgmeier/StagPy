@@ -18,7 +18,7 @@ import f90nml
 
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-from mpl_toolkits.axes_grid1.colorbar import colorbar
+import matplotlib.colorbar
 
 my_path = os.path.abspath(os.path.dirname(__file__))
 cm_data = np.loadtxt(my_path+"/batlow.txt")
