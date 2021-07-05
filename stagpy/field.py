@@ -317,8 +317,8 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
         cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color=text_color)
         cax2.text(0.48, 0.4, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
         cax2.text(0.52, 0.4, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
-        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='y')
-        axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color=text_color)
+        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold')
+        axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
         axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
@@ -469,4 +469,11 @@ def get_surfaceheatflux(step, var):
     surface_fld = step.sfields[var][0,:,0]
     print('shape of surface field', np.shape(surface_fld))
     return surface_fld
+
+def get_cmbheatflux(step, var):
+    print('getting cmb field')
+    cmb_fld = step.sfields[var][0,:,0]
+    print('shape of cmb field', np.shape(cmb_fld))
+    return cmb_fld
+
 
