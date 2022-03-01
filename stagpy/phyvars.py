@@ -43,6 +43,7 @@ FIELD = OrderedDict((
     ('mf', Varf('Melt fraction', '1')),
     ('pf', Varf('Plasticity fraction', '1')),
     ('ex', Varf('Thermal expansivity', '1/K')),
+    ('cp', Varf('Heat Capacity', 'J/(kg.K)')),
 
 
 ))
@@ -93,6 +94,7 @@ FIELD_FILES_H5 = OrderedDict((
     ('MeltFrac', ['mf']),
     ('Plastic_fraction', ['pf']),
     ('ExpanCoeff', ['ex']),
+    ('HeatCap', ['cp']),
 
 ))
 

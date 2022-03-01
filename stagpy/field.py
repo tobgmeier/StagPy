@@ -19,6 +19,8 @@ import f90nml
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 import matplotlib.colorbar
+import scipy.ndimage
+from scipy.ndimage.filters import gaussian_filter
 
 my_path = os.path.abspath(os.path.dirname(__file__))
 cm_data = np.loadtxt(my_path+"/batlow.txt")
@@ -308,7 +310,8 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
     radius  = nml['geometry']['r_cmb']+nml['geometry']['d_dimensional']
     rdim  = nml['geometry']['d_dimensional']
     rcmb = nml['geometry']['r_cmb']
-    rppv = rcmb+(rdim-2740e3*0.613125)
+    g_dim = nml['refstate']['g_dimensional']
+    rppv = rcmb+(rdim-2740e3*(9.81/g_dim))
     rda = 0.5*(1-rcmb/(rcmb+rdim)) + 0.005 # without 0.03 this is the rdimensional in the axis system.
     if draw_circle == True:
         circle1 = plt.Circle((0, 0), rppv, edgecolor='w', linestyle = '--', fill=False, linewidth=1.0)
@@ -371,10 +374,11 @@ def plot_iso(axis, step, var, **extra):
     elif 'colors' not in extra:
         extra_opts['cmap'] = conf.field.cmap.get(var)
     extra_opts.update(extra)
-    axis.contour(xmesh, ymesh, fld, **extra_opts)
+    axis.contour(xmesh, ymesh, fld, levels = [0.0,0.5,0.99999],colors=('black','peru','red'), **extra_opts)
+    #axis.clabel(CS, inline=1, fontsize=10)
 
 
-def plot_vec(axis, step, var,arrow_v=0.5):
+def plot_vec(axis, step, var,arrow_v=50):
     """Plot vector field.
 
     Args:
@@ -387,7 +391,7 @@ def plot_vec(axis, step, var,arrow_v=0.5):
     """
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
 
-    dipz = step.geom.nztot // 8
+    dipz = step.geom.nztot // 10
     sp = 1.0
     if conf.field.shift:
         vec1 = np.roll(vec1, conf.field.shift, axis=0)
@@ -398,9 +402,9 @@ def plot_vec(axis, step, var,arrow_v=0.5):
         dipx = step.geom.nytot if step.geom.twod_yz else step.geom.nxtot
         dipx = int(dipx // 10 * conf.plot.ratio) + 1
     Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
-                vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.003)
-    qk = axis.quiverkey(Q, 0.7, 0.8, arrow_v*3.171e-10, r'${0} \frac{{cm}}{{yr}}$'.format(arrow_v), labelpos='E',
-                   coordinates='figure',labelsep=0.01) 
+                vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, color = 'black')
+    qk = axis.quiverkey(Q, 0.7, 0.8, arrow_v*3.171e-8, r'${0} \frac{{m}}{{yr}}$'.format(arrow_v), labelpos='E',
+                   coordinates='figure',labelsep=0.01, color = 'black') 
 
 def _findminmax(sdat, sovs):
     """Find min and max values of several fields."""
