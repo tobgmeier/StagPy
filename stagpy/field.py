@@ -22,6 +22,8 @@ import matplotlib.colorbar
 import scipy.ndimage
 from scipy.ndimage.filters import gaussian_filter
 
+import copy
+
 my_path = os.path.abspath(os.path.dirname(__file__))
 cm_data = np.loadtxt(my_path+"/batlow.txt")
 vik_map = LinearSegmentedColormap.from_list('vik', cm_data)
@@ -129,6 +131,7 @@ def get_meshes_vec(step, var):
         vec1 = step.fields[var + '2'][0, :, :, 0]
         vec2 = step.fields[var + '3'][0, :, :, 0]
     else:  # spherical yz
+        print('spherical yz')
         xmesh, ymesh = step.geom.x_mesh[0, :, :], step.geom.y_mesh[0, :, :]
         pmesh = step.geom.p_mesh[0, :, :]
         vec_phi = step.fields[var + '2'][0, :, :, 0]
@@ -374,11 +377,11 @@ def plot_iso(axis, step, var, **extra):
     elif 'colors' not in extra:
         extra_opts['cmap'] = conf.field.cmap.get(var)
     extra_opts.update(extra)
-    axis.contour(xmesh, ymesh, fld, levels = [0.0,0.5,0.99999],colors=('black','peru','red'), **extra_opts)
+    axis.contour(xmesh, ymesh, fld, levels = [0.0,0.5,0.99999],colors=('black','peru','red'),alpha=0.7,**extra_opts)
     #axis.clabel(CS, inline=1, fontsize=10)
 
 
-def plot_vec(axis, step, var,arrow_v=50):
+def plot_vec(axis, step, var,arrow_v=20):
     """Plot vector field.
 
     Args:
@@ -391,7 +394,15 @@ def plot_vec(axis, step, var,arrow_v=50):
     """
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
 
-    dipz = step.geom.nztot // 10
+    #55cnc
+    dipz_factor = 20
+    q_scale_factor = 1.7
+    #LHS? 
+
+
+
+
+    dipz = step.geom.nztot // dipz_factor
     sp = 1.0
     if conf.field.shift:
         vec1 = np.roll(vec1, conf.field.shift, axis=0)
@@ -401,9 +412,21 @@ def plot_vec(axis, step, var,arrow_v=50):
     else:
         dipx = step.geom.nytot if step.geom.twod_yz else step.geom.nxtot
         dipx = int(dipx // 10 * conf.plot.ratio) + 1
+
+
+    '''    
+    Q1 = plt.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
+                vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, color = 'black',scale=None, scale_units='inches')
+    Q1._init()
+    assert isinstance(Q1.scale, float)
+    
+    print('QSCALE', Q1.scale)
+    '''
+    scale_v = 1.0
+    q_scale = q_scale_factor*1.9028881819080357e-06
     Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
-                vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, color = 'black')
-    qk = axis.quiverkey(Q, 0.7, 0.8, arrow_v*3.171e-8, r'${0} \frac{{m}}{{yr}}$'.format(arrow_v), labelpos='E',
+                scale_v*vec1[::dipx, ::dipz], scale_v*vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, color = 'black', scale = q_scale, scale_units ='inches')
+    qk = axis.quiverkey(Q, 0.75, 0.85, arrow_v*3.171e-8, r'${0} \frac{{m}}{{yr}}$'.format(arrow_v), labelpos='E',
                    coordinates='figure',labelsep=0.01, color = 'black') 
 
 def _findminmax(sdat, sovs):
