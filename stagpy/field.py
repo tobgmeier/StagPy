@@ -395,8 +395,8 @@ def plot_vec(axis, step, var,arrow_v=20):
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
 
     #55cnc
-    dipz_factor = 20
-    q_scale_factor = 1.7
+    dipz_factor = 10
+    q_scale_factor = 1.5
     #LHS? 
 
 
@@ -408,7 +408,7 @@ def plot_vec(axis, step, var,arrow_v=20):
         vec1 = np.roll(vec1, conf.field.shift, axis=0)
         vec2 = np.roll(vec2, conf.field.shift, axis=0)
     if step.geom.spherical or conf.plot.ratio is None:
-        dipx = dipz
+        dipx = int(0.5*dipz)
     else:
         dipx = step.geom.nytot if step.geom.twod_yz else step.geom.nxtot
         dipx = int(dipx // 10 * conf.plot.ratio) + 1
