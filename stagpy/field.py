@@ -100,7 +100,6 @@ def get_meshes_fld(step, var):
         xmesh, ymesh = step.geom.y_mesh[0, :, :], step.geom.z_mesh[0, :, :]
         fld = fld[0, :, :, 0]
     else:  # spherical yz
-        print('spherical yz')
         xmesh, ymesh = step.geom.x_mesh[0, :, :], step.geom.y_mesh[0, :, :]
         fld = fld[0, :, :, 0]
     return xmesh, ymesh, fld
@@ -131,7 +130,6 @@ def get_meshes_vec(step, var):
         vec1 = step.fields[var + '2'][0, :, :, 0]
         vec2 = step.fields[var + '3'][0, :, :, 0]
     else:  # spherical yz
-        print('spherical yz')
         xmesh, ymesh = step.geom.x_mesh[0, :, :], step.geom.y_mesh[0, :, :]
         pmesh = step.geom.p_mesh[0, :, :]
         vec_phi = step.fields[var + '2'][0, :, :, 0]
@@ -381,7 +379,7 @@ def plot_iso(axis, step, var, **extra):
     #axis.clabel(CS, inline=1, fontsize=10)
 
 
-def plot_vec(axis, step, var,arrow_v=0.5):
+def plot_vec(axis, step, var,arrow_v=0.5, mask_highv = False, q_scale_factor = 0.05):
     """Plot vector field.
 
     Args:
@@ -395,11 +393,10 @@ def plot_vec(axis, step, var,arrow_v=0.5):
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
 
     #55cnc
-    dipz_factor = 15
-    q_scale_factor = 0.05
+    dipz_factor = 15 
     #LHS? 
 
-    xmesh_f, ymesh_f, fld_f = get_meshes_fld(step, 'mf')
+    #xmesh_f, ymesh_f, fld_f = get_meshes_fld(step, 'mf')
 
 
 
@@ -434,23 +431,34 @@ def plot_vec(axis, step, var,arrow_v=0.5):
     #vec1 = np.ma.masked_where(fld_f > 0.5, vec1)
     #vec2 = np.ma.masked_where(fld_f > 0.5, vec2)
 
-    vec1_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec1)
-    vec2_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec2)
-    vec1_highv = np.ma.masked_where(vec_norm < 2*np.mean(vec_norm), vec1)
-    vec2_highv = np.ma.masked_where(vec_norm < 2*np.mean(vec_norm), vec2)
+    if mask_highv == False:
+        vec1_lowv = vec1
+        vec2_lowv = vec2 
+
+
+
+    else: 
+        highv_factor = 10.0
+        vec1_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec1)
+        vec2_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec2)
+        vec1_highv = np.ma.masked_where(vec_norm < 2*np.mean(vec_norm), vec1)
+        vec2_highv = np.ma.masked_where(vec_norm < 2*np.mean(vec_norm), vec2)
+
     scale_v = 1.0
     q_scale = q_scale_factor*1.9028881819080357e-06
 
-    highv_factor = 10.0
+
 
     Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                 scale_v*vec1_lowv[::dipx, ::dipz], scale_v*vec2_lowv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale, color = 'black', scale_units ='inches')
     qk = axis.quiverkey(Q, 0.7, 0.85, arrow_v*3.171e-8, r'${0} \,\frac{{m}}{{yr}}$'.format(arrow_v), labelpos='E',
                    coordinates='figure',labelsep=0.01, color = 'black') 
-    Q2 = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
-                scale_v*vec1_highv[::dipx, ::dipz], scale_v*vec2_highv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale*highv_factor, color = 'red', scale_units ='inches')
-    qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8, r'${0} \,\frac{{m}}{{yr}}$'.format(arrow_v*highv_factor), labelpos='E',
-                   coordinates='figure',labelsep=0.01, color = 'red') 
+
+    if mask_highv == True: 
+        Q2 = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
+                    scale_v*vec1_highv[::dipx, ::dipz], scale_v*vec2_highv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale*highv_factor, color = 'red', scale_units ='inches')
+        qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8, r'${0} \,\frac{{m}}{{yr}}$'.format(arrow_v*highv_factor), labelpos='E',
+                       coordinates='figure',labelsep=0.01, color = 'red') 
 def _findminmax(sdat, sovs):
     """Find min and max values of several fields."""
     minmax = {}
@@ -514,15 +522,11 @@ def cmd():
             misc.saveplot(fig, oname, step.isnap)
 
 def get_surfaceheatflux(step, var):
-    print('getting surface field')
     surface_fld = step.sfields[var][0,:,0]
-    print('shape of surface field', np.shape(surface_fld))
     return surface_fld
 
 def get_cmbheatflux(step, var):
-    print('getting cmb field')
     cmb_fld = step.sfields[var][0,:,0]
-    print('shape of cmb field', np.shape(cmb_fld))
     return cmb_fld
 
 

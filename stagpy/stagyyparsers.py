@@ -425,7 +425,7 @@ def fields(fieldfile, only_header=False, only_istep=False):
         return None
     header = {}
     with fieldfile.open('rb') as fid:
-        print('READING')
+        #print('READING')
         readbin = partial(_readbin, fid)
         magic = readbin()
         if magic > 8000:  # 64 bits
@@ -504,7 +504,7 @@ def fields(fieldfile, only_header=False, only_istep=False):
             nbk * nval
 
         header['scalefac'] = readbin('f') if nval > 1 else 1
-        print('npc', npc)
+        #print('npc', npc)
         flds = np.zeros((nval,
                          header['nts'][0] + header['xyp'],
                          header['nts'][1] + header['xyp'],
@@ -517,7 +517,7 @@ def fields(fieldfile, only_header=False, only_istep=False):
                             range(header['ncs'][1]),
                             range(header['ncs'][0])):
             # read the data for one CPU
-            print('icpu', icpu)
+            #print('icpu', icpu)
             data_cpu = readbin('f', npi) * header['scalefac']
 
             # icpu is (icpu block, icpu z, icpu y, icpu x)
@@ -639,7 +639,7 @@ def _ncores(meshes, twod):
            meshes[cpu(nns[2] - 1)]['Z'][0, 0, -1]):
         nns[2] += 1
         nnpb -= nns[0] * nns[1]
-    print('cores', nns)
+    #print('cores', nns)
     return np.array(nns)
 
 
@@ -778,12 +778,12 @@ def read_geom_h5(xdmf_file, snapshot,xdmf_root_input = None):
     header = {}
     t1 = time.time()
     if xdmf_root_input == None:
-        print('old xdmf_root')
+        #print('old xdmf_root')
         xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
     else: 
-        print('fast track')
+        #print('fast track')
         xdmf_root = xdmf_root_input
-    print('time geom',time.time()-t1)
+    #print('time geom',time.time()-t1)
     if snapshot is None:
         return None, xdmf_root
 
@@ -877,10 +877,8 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None,xdmf_root_input = 
         (dict, numpy.array): geometry information and field data. None
             is returned if data is unavailable.
     """
-    print('h51')
     if header is None:
         #t1 = time.time()
-        print('header is none')
         header, xdmf_root = read_geom_h5(xdmf_file, snapshot,xdmf_root_input)
         #print('timex = ', t1-time.time())
     else:
@@ -891,7 +889,6 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None,xdmf_root_input = 
     data_found = False
     for elt_subdomain in xdmf_root[0][0][snapshot].findall('Grid'):
         ibk = int(elt_subdomain.get('Name').startswith('meshYang'))
-        print('h5', xdmf_root)
         for data_attr in elt_subdomain.findall('Attribute'):
             if data_attr.get('Name') != fieldname:
                 continue
@@ -930,7 +927,7 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None,xdmf_root_input = 
     if fieldname in SFIELD_FILES_H5:
         # remove z component
         flds = flds[..., 0, :]
-    print('time needed after geom', time.time() - th)
+    #print('time needed after geom', time.time() - th)
     return (header, flds) if data_found else None
 
 
@@ -1040,7 +1037,6 @@ def read_surffield_h5(xdmf_file, fieldname, snapshot, header=None):
     return flds if data_found else None
 
 def read_xdmf_root(xdmf_file):
-    print('gettin xdmf root')
     xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
     return xdmf_root
 

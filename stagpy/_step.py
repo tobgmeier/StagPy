@@ -214,7 +214,6 @@ class _Fields(Mapping):
         if name in self._data:
             return self._data[name]
         if name in self._vars:
-            print('GETITEM')
             fld_names, parsed_data = self._get_raw_data(name)
         elif name in self._extra:
             self._data[name] = self._extra[name].description(self.step)
@@ -256,7 +255,6 @@ class _Fields(Mapping):
     def _get_raw_data(self, name):
         """Find file holding data and return its content."""
         # try legacy first, then hdf5
-        print('get_raw_data')
         filestem = ''
         for filestem, list_fvar in self._files.items():
             if name in list_fvar:
@@ -264,19 +262,15 @@ class _Fields(Mapping):
         fieldfile = self.step.sdat.filename(filestem, self.step.isnap,
                                             force_legacy=True)
         if not fieldfile.is_file():
-            print('not field file')
             fieldfile = self.step.sdat.filename(filestem, self.step.isnap)
         parsed_data = None
         if fieldfile.is_file():
-            print('FIELDFILE')
             parsed_data = stagyyparsers.fields(fieldfile)
         elif self.step.sdat.hdf5 and self._filesh5:
-            print('HDF5 FILES')
             for filestem, list_fvar in self._filesh5.items():
                 if name in list_fvar:
                     break
             if filestem in phyvars.SFIELD_FILES_H5:
-                print('SURFACE')
                 xmff = 'Data{}.xmf'.format(
                     'Bottom' if name.endswith('bot') else 'Surface')
                 header = self._header
