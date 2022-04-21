@@ -456,13 +456,13 @@ def plot_vec(axis, step, var,arrow_v=0.005, mask_highv = False, q_scale_factor =
 
     Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                 scale_v*vec1_lowv[::dipx, ::dipz], scale_v*vec2_lowv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale, color = 'black', scale_units ='inches')
-    qk = axis.quiverkey(Q, 0.7, 0.85, arrow_v*3.171e-8*cm_scale, v_units.format(arrow_v/cm_scale), labelpos='E',
+    qk = axis.quiverkey(Q, 0.7, 0.85, arrow_v*3.171e-8, v_units.format(arrow_v/cm_scale), labelpos='E',
                    coordinates='figure',labelsep=0.01, color = 'black') 
 
     if mask_highv == True: 
         Q2 = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                     scale_v*vec1_highv[::dipx, ::dipz], scale_v*vec2_highv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale*highv_factor, color = 'red', scale_units ='inches')
-        qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8*cm_scale, v_units.format(arrow_v*highv_factor/cm_scale), labelpos='E',
+        qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8, v_units.format(arrow_v*highv_factor/cm_scale), labelpos='E',
                        coordinates='figure',labelsep=0.01, color = 'red') 
 
 def _findminmax(sdat, sovs):
