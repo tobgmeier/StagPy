@@ -292,7 +292,7 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
     cbar.set_label(meta.description +
                (' pert.' if conf.field.perturbation else '') +
                (' ({})'.format(unit) if unit else '') +
-               (' [' + meta.dim + ']' if meta.dim != '1' else ' [ ]'),color=text_color, size = text_size)
+               (' (' + meta.dim + ')' if meta.dim != '1' else ' ( )'),color=text_color, size = text_size)
     cbar.ax.tick_params(labelsize=text_size+1, color=text_color)
     cbar.outline.set_edgecolor(text_color)
     #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
@@ -381,7 +381,7 @@ def plot_iso(axis, step, var, **extra):
     #axis.clabel(CS, inline=1, fontsize=10)
 
 
-def plot_vec(axis, step, var,arrow_v=20):
+def plot_vec(axis, step, var,arrow_v=0.5):
     """Plot vector field.
 
     Args:
@@ -395,9 +395,13 @@ def plot_vec(axis, step, var,arrow_v=20):
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
 
     #55cnc
-    dipz_factor = 10
-    q_scale_factor = 1.5
+    dipz_factor = 15
+    q_scale_factor = 0.05
     #LHS? 
+
+    xmesh_f, ymesh_f, fld_f = get_meshes_fld(step, 'mf')
+
+
 
 
 
@@ -422,13 +426,31 @@ def plot_vec(axis, step, var,arrow_v=20):
     
     print('QSCALE', Q1.scale)
     '''
+    #xmesh = np.ma.masked_where(fld_f > 0.5, xmesh)
+
+    vec_norm = np.sqrt(vec1**2.0 + vec2**2.0)
+
+    #ymesh = np.ma.masked_where(fld_f > 0.5, ymesh)
+    #vec1 = np.ma.masked_where(fld_f > 0.5, vec1)
+    #vec2 = np.ma.masked_where(fld_f > 0.5, vec2)
+
+    vec1_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec1)
+    vec2_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec2)
+    vec1_highv = np.ma.masked_where(vec_norm < 2*np.mean(vec_norm), vec1)
+    vec2_highv = np.ma.masked_where(vec_norm < 2*np.mean(vec_norm), vec2)
     scale_v = 1.0
     q_scale = q_scale_factor*1.9028881819080357e-06
-    Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
-                scale_v*vec1[::dipx, ::dipz], scale_v*vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, color = 'black', scale = q_scale, scale_units ='inches')
-    qk = axis.quiverkey(Q, 0.75, 0.85, arrow_v*3.171e-8, r'${0} \frac{{m}}{{yr}}$'.format(arrow_v), labelpos='E',
-                   coordinates='figure',labelsep=0.01, color = 'black') 
 
+    highv_factor = 10.0
+
+    Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
+                scale_v*vec1_lowv[::dipx, ::dipz], scale_v*vec2_lowv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale, color = 'black', scale_units ='inches')
+    qk = axis.quiverkey(Q, 0.7, 0.85, arrow_v*3.171e-8, r'${0} \,\frac{{m}}{{yr}}$'.format(arrow_v), labelpos='E',
+                   coordinates='figure',labelsep=0.01, color = 'black') 
+    Q2 = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
+                scale_v*vec1_highv[::dipx, ::dipz], scale_v*vec2_highv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale*highv_factor, color = 'red', scale_units ='inches')
+    qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8, r'${0} \,\frac{{m}}{{yr}}$'.format(arrow_v*highv_factor), labelpos='E',
+                   coordinates='figure',labelsep=0.01, color = 'red') 
 def _findminmax(sdat, sovs):
     """Find min and max values of several fields."""
     minmax = {}
