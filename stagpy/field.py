@@ -379,7 +379,7 @@ def plot_iso(axis, step, var, **extra):
     #axis.clabel(CS, inline=1, fontsize=10)
 
 
-def plot_vec(axis, step, var,arrow_v=0.5, mask_highv = False, q_scale_factor = 0.05):
+def plot_vec(axis, step, var,arrow_v=0.005, mask_highv = False, q_scale_factor = 0.05, use_cm = False):
     """Plot vector field.
 
     Args:
@@ -447,18 +447,24 @@ def plot_vec(axis, step, var,arrow_v=0.5, mask_highv = False, q_scale_factor = 0
     scale_v = 1.0
     q_scale = q_scale_factor*1.9028881819080357e-06
 
-
+    if (use_cm == False):
+        cm_scale = 1.0
+        v_units = r'${0} \,\frac{{m}}{{yr}}$'
+    else:
+        cm_scale = 0.01
+        v_units =  r'${0} \,\frac{{cm}}{{yr}}$'  
 
     Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                 scale_v*vec1_lowv[::dipx, ::dipz], scale_v*vec2_lowv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale, color = 'black', scale_units ='inches')
-    qk = axis.quiverkey(Q, 0.7, 0.85, arrow_v*3.171e-8, r'${0} \,\frac{{m}}{{yr}}$'.format(arrow_v), labelpos='E',
+    qk = axis.quiverkey(Q, 0.7, 0.85, arrow_v*3.171e-8*cm_scale, v_units.format(arrow_v/cm_scale), labelpos='E',
                    coordinates='figure',labelsep=0.01, color = 'black') 
 
     if mask_highv == True: 
         Q2 = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                     scale_v*vec1_highv[::dipx, ::dipz], scale_v*vec2_highv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale*highv_factor, color = 'red', scale_units ='inches')
-        qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8, r'${0} \,\frac{{m}}{{yr}}$'.format(arrow_v*highv_factor), labelpos='E',
+        qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8*cm_scale, v_units.format(arrow_v*highv_factor/cm_scale), labelpos='E',
                        coordinates='figure',labelsep=0.01, color = 'red') 
+
 def _findminmax(sdat, sovs):
     """Find min and max values of several fields."""
     minmax = {}
