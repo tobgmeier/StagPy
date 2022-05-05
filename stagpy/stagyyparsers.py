@@ -972,15 +972,19 @@ def read_tracers_h5(xdmf_file, infoname, snapshot, position):
 
 def read_time_h5(h5folder):
     """Iterate through (isnap, istep) recorded in h5folder/'time_botT.h5'.
-
     Args:
-        h5folder (:class:`pathlib.Path`): directory of HDF5 output files.
+        h5folder: directory of HDF5 output files.
     Yields:
-        tuple of int: (isnap, istep).
+        tuple (isnap, istep).
     """
     with h5py.File(h5folder / 'time_botT.h5', 'r') as h5f:
         for name, dset in h5f.items():
-            yield int(name[-5:]), int(dset[2])
+            isnap = int(name[-5:])
+            if len(dset) == 3:
+                istep = int(dset[2])
+            else:
+                istep = int(dset[0])
+            yield isnap, istep
 
 def read_1d_field(h5folder, fieldname):
     #old - use hdf5 version (read_surffield_h5) instead
