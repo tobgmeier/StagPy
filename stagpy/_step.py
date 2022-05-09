@@ -302,7 +302,7 @@ class _Fields(Mapping):
             return stagyyparsers.fields(binfiles.pop(), only_header=True)
         elif self.step.sdat.hdf5:
             xmf = self.step.sdat.hdf5 / 'Data.xmf'
-            return stagyyparsers.read_geom_h5(xmf, self.step.isnap)[0]
+            return stagyyparsers.read_geom_h5(xmf, self.step.isnap, xdmf_root_input = self.step.sdat.xdmf_root)[0]
 
     @crop
     def geom(self):
