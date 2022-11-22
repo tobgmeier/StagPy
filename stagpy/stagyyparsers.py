@@ -237,7 +237,7 @@ def rprof(rproffile, colnames):
         return {}, None
     data = pd.read_csv(rproffile, delim_whitespace=True, dtype=str,
                        header=None, comment='*', skiprows=1,
-                       engine='c', memory_map=True, on_bad_lines='skip')
+                       engine='c', memory_map=True, on_lsines='skip')
     data = data.apply(pd.to_numeric, raw=True, errors='coerce')
 
     isteps = _extract_rsnap_isteps(rproffile, data)
@@ -773,12 +773,12 @@ def read_geom_h5(xdmf_file, snapshot,xdmf_root_input = None):
     """
     header = {}
     t1 = time.time()
-    print('XDMF ROOT', xdmf_root_input)
+    #print('XDMF ROOT', xdmf_root_input)
     if xdmf_root_input == None:
-        print('old xdmf_root')
+        #print('old xdmf_root')
         xdmf_root = xmlET.parse(str(xdmf_file)).getroot()
     else: 
-        print('fast track')
+        #print('fast track')
         xdmf_root = xdmf_root_input
     #print('time geom',time.time()-t1)
     if snapshot is None:
@@ -874,10 +874,10 @@ def read_field_h5(xdmf_file, fieldname, snapshot, header=None,xdmf_root_input = 
         (dict, numpy.array): geometry information and field data. None
             is returned if data is unavailable.
     """
-    print('READING HF file ')
+    #print('READING HF file ')
     if header is None:
         #t1 = time.time()
-        print('header is none')
+        #print('header is none')
         header, xdmf_root = read_geom_h5(xdmf_file, snapshot,xdmf_root_input)
         #print('timex = ', t1-time.time())
     else:
