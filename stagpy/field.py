@@ -527,12 +527,20 @@ def cmd():
             plt.tight_layout(w_pad=3)
             misc.saveplot(fig, oname, step.isnap)
 
+#Wmaybe change this to get_sfield()... 
 def get_surfaceheatflux(step, var):
     surface_fld = step.sfields[var][0,:,0]
+    #var = 'hfz'
+    #_,_,fld = get_meshes_fld(step, var)
+    #surface_fld = fld[:,-1]
     return surface_fld
 
 def get_cmbheatflux(step, var):
     cmb_fld = step.sfields[var][0,:,0]
     return cmb_fld
+
+def get_crust(step, var):
+    crust_fld = step.sfields[var][0,:,0]
+    return crust_fld
 
 

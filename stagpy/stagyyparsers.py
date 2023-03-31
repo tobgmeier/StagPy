@@ -57,7 +57,7 @@ def time_series(timefile, colnames):
         return None
     data = pd.read_csv(timefile, delim_whitespace=True, dtype=str,
                        header=None, skiprows=1, index_col=0,
-                       engine='c', memory_map=True, on_bad_lines='skip')
+                       engine='c', memory_map=True, error_bad_lines=False, warn_bad_lines=False)
     data = data.apply(pd.to_numeric, raw=True, errors='coerce')
 
     # detect useless lines produced when run is restarted
@@ -100,7 +100,7 @@ def plate_analyse(platefile, colnames):
         return None
     data = pd.read_csv(platefile, delim_whitespace=True, dtype=str,
                        header=None, skiprows=1, index_col=0,
-                       engine='c', memory_map=True, on_bad_lines='skip')
+                       engine='c', memory_map=True, error_bad_lines=False, warn_bad_lines=False)
     data = data.apply(pd.to_numeric, raw=True, errors='coerce')
 
     # detect useless lines produced when run is restarted
@@ -326,7 +326,7 @@ def refstate(reffile, ncols=8):
         return None, None
     data = pd.read_csv(reffile, delim_whitespace=True, dtype=str,
                        header=None, names=range(ncols),
-                       engine='c', memory_map=True, on_bad_lines='skip')
+                       engine='c', memory_map=True, error_bad_lines=False, warn_bad_lines=False)
     data = data.apply(pd.to_numeric, raw=True, errors='coerce')
     # drop lines corresponding to metadata
     data.dropna(subset=[0], inplace=True)
