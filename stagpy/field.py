@@ -528,7 +528,7 @@ def cmd():
             misc.saveplot(fig, oname, step.isnap)
 
 #Wmaybe change this to get_sfield()... 
-def get_surfaceheatflux(step, var):
+def get_heatflux(step, var):
     surface_fld = step.sfields[var][0,:,0]
     #var = 'hfz'
     #_,_,fld = get_meshes_fld(step, var)
@@ -542,5 +542,10 @@ def get_cmbheatflux(step, var):
 def get_crust(step, var):
     crust_fld = step.sfields[var][0,:,0]
     return crust_fld
+
+
+def get_heatflux(step, var):
+    surface_fld = step.sfields[var][0,:,0]
+    return surface_fld
 
 
