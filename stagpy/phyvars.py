@@ -254,6 +254,7 @@ TIME = OrderedDict((
     ('r_ic', Vart('Inner core radius', 'Inner core radius', 'm')),
     ('topT_val', Vart('Temperature at top', 'Temperature', 'K')),
     ('botT_val', Vart('Temperature at bottom', 'Temperature', 'K')),
+    ('co2_mean', Vart('CO2 concentration', 'CO2 concentration', '1')),
 ))
 
 TIME_EXTRA = OrderedDict((
