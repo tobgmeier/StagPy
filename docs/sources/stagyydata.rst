@@ -25,15 +25,15 @@ A :class:`~stagpy.stagyydata.StagyyData` instance has two attributes to access
 time steps and snapshots in a consistent way:
 :attr:`~stagpy.stagyydata.StagyyData.steps` and
 :attr:`~stagpy.stagyydata.StagyyData.snaps`. Accessing the ``n``-th time step
-or the ``m-th`` snapshot is done using the item access notation (square
+or the ``m``-th snapshot is done using the item access notation (square
 brackets)::
 
     sdat.steps[n]
     sdat.snaps[m]
 
-These two expressions each return a :class:`~stagpy.stagyydata._Step` instance.
+These two expressions each return a :class:`~stagpy._step.Step` instance.
 Moreover, if the ``m``-th snapshot was done at the ``n``-th step, both
-expressions return the same :class:`~stagpy.stagyydata._Step` instance. In
+expressions return the same :class:`~stagpy._step.Step` instance. In
 other words, if for example the 100th snapshot was made at the 1000th step,
 ``sdat.steps[1000] is sdat.snaps[100]`` is true.  The correspondence between
 time steps and snapshots is deduced from available binary files.
@@ -134,52 +134,75 @@ Both are :class:`pandas.Series` indexed by the available variables.
 Geometry
 --------
 
-Geometry information are read from binary files.  :attr:`_Step.geom
-<stagpy.stagyydata._Step.geom>` has various attributes defining the geometry of
+Geometry information are read from binary files.  :attr:`Step.geom
+<stagpy._step.Step.geom>` has various attributes defining the geometry of
 the problem.
 
-``cartesian``, ``curvilinear``, ``cylindrical``, ``spherical`` and ``yinyang``
-booleans define the shape of the domain (``curvilinear`` being the opposite of
-``cartesian``, ``True`` if ``cylindrical`` or ``spherical`` is ``True``).
+:attr:`~stagpy._step._Geometry.cartesian`,
+:attr:`~stagpy._step._Geometry.curvilinear`,
+:attr:`~stagpy._step._Geometry.cylindrical`,
+:attr:`~stagpy._step._Geometry.spherical` and
+:attr:`~stagpy._step._Geometry.yinyang` booleans define the shape of the domain
+(:attr:`~stagpy._step._Geometry.curvilinear` being the opposite of
+:attr:`~stagpy._step._Geometry.cartesian`, ``True`` if
+:attr:`~stagpy._step._Geometry.cylindrical` or
+:attr:`~stagpy._step._Geometry.spherical` is ``True``).
 
-``twod_xz``, ``twod_yz``, ``twod`` and ``threed`` booleans indicate the number
-of spatial dimensions in the simulation. Note that fields are always four
+:attr:`~stagpy._step._Geometry.twod_xz`,
+:attr:`~stagpy._step._Geometry.twod_yz`, :attr:`~stagpy._step._Geometry.twod`
+and :attr:`~stagpy._step._Geometry.threed` booleans indicate the number of
+spatial dimensions in the simulation. Note that fields are always four
 dimensional arrays (spatial + blocks) regardless of the actual dimension of the
 domain.
 
-``nxtot``, ``nytot``, ``nztot``, ``nbtot``, ``nttot``, ``nptot`` and ``nrtot``
-are the total number of points in the various spatial directions. Note that
-``nttot``, ``nptot`` and ``nrtot`` are the same as ``nxtot``, ``nytot`` and
-``nztot`` regardless of whether the geometry is cartesian or curvilinear.
+:attr:`~stagpy._step._Geometry.nxtot`, :attr:`~stagpy._step._Geometry.nytot`,
+:attr:`~stagpy._step._Geometry.nztot`, :attr:`~stagpy._step._Geometry.nbtot`,
+:attr:`~stagpy._step._Geometry.nttot`, :attr:`~stagpy._step._Geometry.nptot`
+and :attr:`~stagpy._step._Geometry.nrtot` are the total number of points in the
+various spatial directions. Note that :attr:`~stagpy._step._Geometry.nttot`,
+:attr:`~stagpy._step._Geometry.nptot` and :attr:`~stagpy._step._Geometry.nrtot`
+are the same as :attr:`~stagpy._step._Geometry.nxtot`,
+:attr:`~stagpy._step._Geometry.nytot` and :attr:`~stagpy._step._Geometry.nztot`
+regardless of whether the geometry is cartesian or curvilinear.
 
-``x_coord``, ``y_coord`` and ``z_coord`` as well as ``t_coord``, ``p_coord``
-and ``r_coord`` are the coordinates of cell centers in the threee directions.
-As for the total number of points, they are the same regardless of the actual
-geometry.
+:attr:`~stagpy._step._Geometry.x_centers`,
+:attr:`~stagpy._step._Geometry.y_centers`, and
+:attr:`~stagpy._step._Geometry.z_centers` as well as
+:attr:`~stagpy._step._Geometry.t_centers`,
+:attr:`~stagpy._step._Geometry.p_centers`, and
+:attr:`~stagpy._step._Geometry.r_centers` are the coordinates of cell centers
+in the three directions.  As for the total number of points, they are the same
+regardless of the actual geometry.
 
-``x_mesh``, ``y_mesh`` and ``z_mesh`` are three dimensional meshes containing
-the **cartesian** coordinates of cell centers (even if the geometry is
-curvilinear).
-
-``t_mesh``, ``p_mesh`` and ``r_mesh`` are three dimensional meshes containing
-the **spherical** coordinates of cell centers (these are set as ``None`` if the
-geometry is cartesian).
+Similarly to ``*_centers`` attributes, :attr:`~stagpy._step._Geometry.x_walls`,
+:attr:`~stagpy._step._Geometry.y_walls`, and
+:attr:`~stagpy._step._Geometry.z_walls` as well as
+:attr:`~stagpy._step._Geometry.t_walls`,
+:attr:`~stagpy._step._Geometry.p_walls`, and
+:attr:`~stagpy._step._Geometry.r_walls` are the coordinates of cell walls in
+the three directions.
 
 Scalar and vector fields
 ------------------------
 
-Vector and scalar fields are accessible through :attr:`_Step.fields
-<stagpy.stagyydata._Step.fields>` using their name as key. For example, the
+Vector and scalar fields are accessible through :attr:`Step.fields
+<stagpy._step.Step.fields>` using their name as key. For example, the
 temperature field of the 100th snapshot is obtained with
 ``sdat.snaps[100].fields['T']``.  Valid names of fields can be obtained by
-running ``% stagpy var``. Fields are four dimensional arrays, with indices in
-the order x, y, z and block.
+running ``% stagpy var``. Items are named tuples with two elements:
+
+- :data:`values`: the field itself, a four dimensional array with indices in
+  the order x, y, z and block;
+- :data:`meta`: metadata of the field, also a named tuple with:
+
+    - :data:`description`: explanation of what the field is;
+    - :data:`dim`: the dimension of the field (if applicable) in SI units.
 
 Tracers data
 ------------
 
 Tracer data (position, mass, composition...) are accessible through
-:attr:`_Step.tracers<stagpy.stagyydata._Step.tracers>` using the
+:attr:`Step.tracers<stagpy._step.Step.tracers>` using the
 property name as key.  They are organized by block.  For example,
 the masses of tracers in the first block is obtained with
 ``sdat.snaps[-1].tracers['Mass'][0]``. This is a one dimensional

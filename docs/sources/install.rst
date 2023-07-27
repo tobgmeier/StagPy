@@ -1,20 +1,14 @@
 Installation
 ============
 
-You will need Python 3.6 or higher to use StagPy. StagPy is available on
+You will need Python 3.8 or higher to use StagPy. StagPy is available on
 the Python Package Index, via ``pip``.
 
-If Python3 is not installed on your system or you don't have sufficient
-permissions to update it, the simplest way to get it is to install Miniconda_
-or Anaconda_ (Anaconda being Miniconda with a lot of extra modules that can be
-installed in Miniconda later, this choice doesn't matter; pick Miniconda if you
-want a faster and lighter installation). Then, use ``conda`` to install the
-following dependencies::
-
-    % conda install numpy scipy pandas h5py matplotlib setuptools_scm
+If you don't have sufficient permissions to install or update Python, you might
+be interested in Miniconda_ or Anaconda_.
 
 .. _Miniconda: https://docs.conda.io/en/latest/miniconda.html
-.. _Anaconda: https://www.anaconda.com/distribution/#download-section
+.. _Anaconda: https://www.anaconda.com/products/individual
 
 Installation using ``pip``
 --------------------------
@@ -27,9 +21,13 @@ module to install it (it is bootstrapped within the Python interpreter)::
 In case this doesn't work, download the official script
 <https://bootstrap.pypa.io/get-pip.py> and run it with ``python3``.
 
+Then, update ``pip`` to the latest version::
+
+    % python3 -m pip install -U --user pip
+
 You can then install and/or update StagPy with the following command::
 
-    % python3 -m pip install -U --user stagpy
+    % python3 -m pip install -U stagpy
 
 Make sure that the directory where ``pip`` install package entry-points
 (usually ``~/.local/bin``) is in your ``PATH`` environment variable.
@@ -61,11 +59,3 @@ Or this to your ``~/.zshrc`` file::
     source ~/.config/stagpy/zsh/_stagpy.sh
 
 Enjoy!
-
-Troubleshooting
----------------
-
-If you get a matplotlib related error stating that Python is not installed as
-a framework, see `this answer on StackOverflow`__.
-
-.. __: https://stackoverflow.com/a/21789908

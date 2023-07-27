@@ -1,2 +1,73 @@
 [build-system]
-requires = ["setuptools", "setuptools_scm", "wheel"]
+requires = ["setuptools>=61", "setuptools_scm[toml]>=7.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stagpy"
+dynamic = ["version"]
+description = "Tool for StagYY output files processing"
+readme = "README.rst"
+authors = [
+    {name = "Adrien Morison", email = "adrien.morison@gmail.com"},
+    {name = "Martina Ulvrova"},
+    {name = "Stéphane Labrosse"},
+]
+maintainers = [
+    {name = "Adrien Morison", email = "adrien.morison@gmail.com"},
+]
+license = {file = "LICENSE"}
+urls = {homepage = "https://github.com/StagPython/StagPy"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "loam>=0.8.0,<0.9.0",
+    "f90nml>=1.4.3",
+    "setuptools_scm>=7.1",
+    "numpy>=1.21",
+    "scipy>=1.7",
+    "pandas>=1.3",
+    "h5py>=3.8",
+    "matplotlib>=3.5",
+]
+
+[project.scripts]
+stagpy = "stagpy.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["stagpy"]
+namespaces = false
+
+[tool.setuptools.package-data]
+stagpy = ["py.typed", "_styles/stagpy-*.mplstyle"]
+
+[tool.setuptools_scm]
+write_to = "stagpy/_version.py"
+
+[tool.mypy]
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "setuptools_scm",
+    "f90nml.*",
+    "h5py.*",
+    "matplotlib.*",
+    "mpl_toolkits.*",
+    "pandas.*",
+    "pytest.*",
+    "scipy.*",
+]
+ignore_missing_imports = true
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3

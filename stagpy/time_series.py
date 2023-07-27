@@ -1,107 +1,131 @@
 """Plots time series."""
 
-import numpy as np
+from __future__ import annotations
+
+import typing
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
-from . import conf, misc
+from . import _helpers, conf
 from .error import InvalidTimeFractionError
 from .stagyydata import StagyyData
 
+if typing.TYPE_CHECKING:
+    from typing import List, Optional, Sequence
 
-def _collect_marks(sdat):
+    from pandas import DataFrame
+
+
+def _collect_marks(sdat: StagyyData) -> List[float]:
     """Concatenate mark* config variable."""
-    times = set(conf.time.marktimes.replace(',', ' ').split())
-    times = list(map(float, times))
-    times.extend(step.timeinfo['t']
-                 for step in sdat.snaps[conf.time.marksnaps])
-    times.extend(step.timeinfo['t']
-                 for step in sdat.steps[conf.time.marksteps])
+    times = list(conf.time.marktimes)
+    times.extend(step.timeinfo["t"] for step in sdat.snaps[conf.time.marksnaps])
+    times.extend(step.timeinfo["t"] for step in sdat.steps[conf.time.marksteps])
     return times
 
 
-def plot_time_series(sdat, lovs):
+def plot_time_series(
+    sdat: StagyyData, names: Sequence[Sequence[Sequence[str]]]
+) -> None:
     """Plot requested time series.
 
     Args:
-        sdat (:class:`~stagpy.stagyydata.StagyyData`): a StagyyData instance.
-        lovs (nested list of str): nested list of series names such as
-            the one produced by :func:`stagpy.misc.list_of_vars`.
+        sdat: a :class:`~stagpy.stagyydata.StagyyData` instance.
+        names: time series names organized by figures, plots and subplots.
 
     Other Parameters:
         conf.time.tstart: the starting time.
         conf.time.tend: the ending time.
     """
     time_marks = _collect_marks(sdat)
-    for vfig in lovs:
-        fig, axes = plt.subplots(nrows=len(vfig), sharex=True,
-                                 figsize=(12, 2 * len(vfig)))
+    for vfig in names:
+        tstart = conf.time.tstart
+        tend = conf.time.tend
+        fig, axes = plt.subplots(
+            nrows=len(vfig), sharex=True, figsize=(12, 2 * len(vfig))
+        )
         axes = [axes] if len(vfig) == 1 else axes
-        fname = ['time']
+        fname = ["time"]
         for iplt, vplt in enumerate(vfig):
             ylabel = None
-            series_on_plt = (sdat.tseries[tvar] for tvar in vplt)
+            series_on_plt = [
+                sdat.tseries.tslice(tvar, conf.time.tstart, conf.time.tend)
+                for tvar in vplt
+            ]
+            ptstart = min(series.time[0] for series in series_on_plt)
+            ptend = max(series.time[-1] for series in series_on_plt)
+            tstart = ptstart if tstart is None else min(ptstart, tstart)
+            tend = ptend if tend is None else max(ptend, tend)
             fname.extend(vplt)
-            for ivar, (series, time, meta) in enumerate(series_on_plt):
-                axes[iplt].plot(time, series, conf.time.style,
-                                label=meta.description)
-                lbl = meta.kind
+            for ivar, tseries in enumerate(series_on_plt):
+                axes[iplt].plot(
+                    tseries.time,
+                    tseries.values,
+                    conf.time.style,
+                    label=tseries.meta.description,
+                )
+                lbl = tseries.meta.kind
                 if ylabel is None:
                     ylabel = lbl
                 elif ylabel != lbl:
-                    ylabel = ''
+                    ylabel = ""
             if ivar == 0:
-                ylabel = meta.description
+                ylabel = tseries.meta.description
             if ylabel:
-                _, unit = sdat.scale(1, meta.dim)
+                _, unit = sdat.scale(1, tseries.meta.dim)
                 if unit:
-                    ylabel += f' ({unit})'
+                    ylabel += f" ({unit})"
                 axes[iplt].set_ylabel(ylabel)
-            if vplt[0][:3] == 'eta':  # list of log variables
-                axes[iplt].set_yscale('log')
+            if vplt[0][:3] == "eta":  # list of log variables
+                axes[iplt].set_yscale("log")
             axes[iplt].set_ylim(bottom=conf.plot.vmin, top=conf.plot.vmax)
             if ivar:
                 axes[iplt].legend()
             axes[iplt].tick_params()
             for time_mark in time_marks:
-                axes[iplt].axvline(time_mark, color='black', linestyle='--')
-        _, unit = sdat.scale(1, 's')
+                axes[iplt].axvline(time_mark, color="black", linestyle="--")
+        _, unit = sdat.scale(1, "s")
         if unit:
-            unit = f' ({unit})'
-        axes[-1].set_xlabel('Time' + unit)
-        time = sdat.tseries.tslice(
-            't', conf.time.tstart, conf.time.tend).values
-        axes[-1].set_xlim(time[[0, -1]])
+            unit = f" ({unit})"
+        axes[-1].set_xlabel("Time" + unit)
+        axes[-1].set_xlim(tstart, tend)
         axes[-1].tick_params()
-        misc.saveplot(fig, '_'.join(fname))
+        _helpers.saveplot(fig, "_".join(fname))
 
 
-def compstat(sdat, *names, tstart=None, tend=None):
+def compstat(
+    sdat: StagyyData,
+    *names: str,
+    tstart: Optional[float] = None,
+    tend: Optional[float] = None,
+) -> DataFrame:
     """Compute statistics from series output by StagYY.
 
     Args:
-        sdat (:class:`~stagpy.stagyydata.StagyyData`): a StagyyData instance.
-        names (str): variables whose statistics should be computed.
-        tstart (float): starting time. Set to None to start at the beginning of
+        sdat: a :class:`~stagpy.stagyydata.StagyyData` instance.
+        names: variables whose statistics should be computed.
+        tstart: starting time. Set to None to start at the beginning of
             available data.
-        tend (float): ending time. Set to None to stop at the end of available
-            data.
+        tend: ending time. Set to None to stop at the end of available data.
     Returns:
-        :class:`pandas.DataFrame`: computed statistics with 'mean' and 'rms' as
-            index and variable names as columns.
+        a :class:`pandas.DataFrame` with statistics. 'mean' and 'rms' as index,
+        variable names as columns.
     """
-    stats = pd.DataFrame(columns=names, index=['mean', 'rms'])
+    stats = pd.DataFrame(columns=names, index=["mean", "rms"])
     for name in names:
-        data, time, _ = sdat.tseries.tslice(name, tstart, tend)
-        delta_time = time[-1] - time[0]
-        mean = np.trapz(data, x=time) / delta_time
-        stats.loc['mean', name] = mean
-        stats.loc['rms', name] = np.sqrt(np.trapz((data - mean)**2, x=time) /
-                                         delta_time)
+        series = sdat.tseries.tslice(name, tstart, tend)
+        delta_time = series.time[-1] - series.time[0]
+        mean = np.trapz(series.values, x=series.time) / delta_time
+        stats.loc["mean", name] = mean
+        stats.loc["rms", name] = np.sqrt(
+            np.trapz((series.values - mean) ** 2, x=series.time) / delta_time
+        )
     return stats
 
 
-def cmd():
+def cmd() -> None:
     """Implementation of time subcommand.
 
     Other Parameters:
@@ -118,15 +142,12 @@ def cmd():
         conf.time.tend = None
         t_0 = sdat.tseries.time[0]
         t_f = sdat.tseries.time[-1]
-        conf.time.tstart = (t_0 * conf.time.fraction +
-                            t_f * (1 - conf.time.fraction))
+        conf.time.tstart = t_0 * conf.time.fraction + t_f * (1 - conf.time.fraction)
 
-    lovs = misc.list_of_vars(conf.time.plot)
-    if lovs:
-        plot_time_series(sdat, lovs)
+    plot_time_series(sdat, conf.time.plot)
 
     if conf.time.compstat:
-        names = conf.time.compstat.replace(',', ' ').split()
-        stats = compstat(sdat, *names, tstart=conf.time.tstart,
-                         tend=conf.time.tend)
-        stats.to_csv('statistics.dat')
+        stats = compstat(
+            sdat, *conf.time.compstat, tstart=conf.time.tstart, tend=conf.time.tend
+        )
+        stats.to_csv("statistics.dat")

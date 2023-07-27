@@ -25,6 +25,7 @@ Welcome to StagPy's documentation!
    sources/cookbook/field
    sources/cookbook/nura
    sources/cookbook/vrmsra
+   sources/cookbook/tracers
 
 .. toctree::
    :maxdepth: 2
@@ -41,9 +42,9 @@ Welcome to StagPy's documentation!
    sources/apiref/args
    sources/apiref/commands
    sources/apiref/config
+   sources/apiref/datatypes
    sources/apiref/error
    sources/apiref/field
-   sources/apiref/misc
    sources/apiref/parfile
    sources/apiref/phyvars
    sources/apiref/plates

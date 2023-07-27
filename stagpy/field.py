@@ -1,20 +1,27 @@
 """Plot scalar and vector fields."""
 
+from __future__ import annotations
+
+import typing
 from itertools import chain
 
-import numpy as np
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpat
+
 import math
 import os
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from . import conf, misc, phyvars
+from . import _helpers, conf, phyvars
 from .error import NotAvailableError
 from .stagyydata import StagyyData
 import f90nml
+
 
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
@@ -28,12 +35,32 @@ my_path = os.path.abspath(os.path.dirname(__file__))
 cm_data = np.loadtxt(my_path+"/batlow.txt")
 vik_map = LinearSegmentedColormap.from_list('vik', cm_data)
 
-def _threed_extract(step, var):
-    """Return suitable slices and mesh for 3D fields."""
+if typing.TYPE_CHECKING:
+    from typing import Any, Dict, Iterable, Optional, Tuple, Union
+
+    from matplotlib.axes import Axes
+    from matplotlib.collections import QuadMesh
+    from matplotlib.colorbar import Colorbar
+    from matplotlib.figure import Figure
+    from numpy import ndarray
+
+    from ._step import Step
+    from .datatypes import Varf
+
+
+# The location is off for vertical velocities: they have an extra
+# point in (x,y) instead of z in the output
+
+
+def _threed_extract(
+    step: Step, var: str, walls: bool = False
+) -> Tuple[Tuple[ndarray, ndarray], ndarray]:
+    """Return suitable slices and coords for 3D fields."""
     is_vector = not valid_field_var(var)
-    i_x = conf.field.ix
-    i_y = conf.field.iy
-    i_z = conf.field.iz
+    hwalls = is_vector or walls
+    i_x: Optional[Union[int, slice]] = conf.field.ix
+    i_y: Optional[Union[int, slice]] = conf.field.iy
+    i_z: Optional[Union[int, slice]] = conf.field.iz
     if i_x is not None or i_y is not None:
         i_z = None
     if i_x is not None or i_z is not None:
@@ -41,101 +68,119 @@ def _threed_extract(step, var):
     if i_x is None and i_y is None and i_z is None:
         i_x = 0
     if i_x is not None:
-        xmesh, ymesh = step.geom.y_mesh[i_x, :, :], step.geom.z_mesh[i_x, :, :]
+        xcoord = step.geom.y_walls if hwalls else step.geom.y_centers
+        ycoord = step.geom.z_walls if walls else step.geom.z_centers
         i_y = i_z = slice(None)
-        varx, vary = var + '2', var + '3'
+        varx, vary = var + "2", var + "3"
     elif i_y is not None:
-        xmesh, ymesh = step.geom.x_mesh[:, i_y, :], step.geom.z_mesh[:, i_y, :]
+        xcoord = step.geom.x_walls if hwalls else step.geom.x_centers
+        ycoord = step.geom.z_walls if walls else step.geom.z_centers
         i_x = i_z = slice(None)
-        varx, vary = var + '1', var + '3'
+        varx, vary = var + "1", var + "3"
     else:
-        xmesh, ymesh = step.geom.x_mesh[:, :, i_z], step.geom.y_mesh[:, :, i_z]
+        xcoord = step.geom.x_walls if hwalls else step.geom.x_centers
+        ycoord = step.geom.y_walls if hwalls else step.geom.y_centers
         i_x = i_y = slice(None)
-        varx, vary = var + '1', var + '2'
+        varx, vary = var + "1", var + "2"
+    data: Any
     if is_vector:
-        data = (step.fields[varx][i_x, i_y, i_z, 0],
-                step.fields[vary][i_x, i_y, i_z, 0])
+        data = (
+            step.fields[varx].values[i_x, i_y, i_z, 0],
+            step.fields[vary].values[i_x, i_y, i_z, 0],
+        )
     else:
-        data = step.fields[var][i_x, i_y, i_z, 0]
-    return (xmesh, ymesh), data
+        data = step.fields[var].values[i_x, i_y, i_z, 0]
+    return (xcoord, ycoord), data
 
 
-def valid_field_var(var):
+def valid_field_var(var: str) -> bool:
     """Whether a field variable is defined.
 
-    This function checks if a definition of the variable exists in
-    :data:`phyvars.FIELD` or :data:`phyvars.FIELD_EXTRA`.
-
     Args:
-        var (str): the variable name to be checked.
+        var: the variable name to be checked.
     Returns:
-        bool: True is the var is defined, False otherwise.
+        whether the var is defined in :data:`~stagpy.phyvars.FIELD` or
+        :data:`~stagpy.phyvars.FIELD_EXTRA`.
     """
     return var in phyvars.FIELD or var in phyvars.FIELD_EXTRA
 
 
-def get_meshes_fld(step, var):
+def get_meshes_fld(
+    step: Step, var: str, walls: bool = False
+) -> Tuple[ndarray, ndarray, ndarray, Varf]:
     """Return scalar field along with coordinates meshes.
 
     Only works properly in 2D geometry and 3D cartesian.
 
     Args:
-        step (:class:`~stagpy.stagyydata._Step`): a step of a StagyyData
-            instance.
-        var (str): scalar field name.
+        step: a :class:`~stagpy._step.Step` of a StagyyData instance.
+        var: scalar field name.
+        walls: consider the walls as the relevant mesh.
     Returns:
-        tuple of :class:`numpy.array`: xmesh, ymesh, fld
-            2D arrays containing respectively the x position, y position, and
-            the value of the requested field.
+        tuple (xmesh, ymesh, fld, meta).  2D arrays containing respectively the
+        x position, y position, the values and the metadata of the requested
+        field.
     """
     #t1 = time.time()
     fld = step.fields[var]
-    #print('time1', time.time()-t1)
+    hwalls = (
+        walls
+        or fld.values.shape[0] != step.geom.nxtot
+        or fld.values.shape[1] != step.geom.nytot
+    )
     if step.geom.threed and step.geom.cartesian:
-        (xmesh, ymesh), fld = _threed_extract(step, var)
+        (xcoord, ycoord), vals = _threed_extract(step, var, walls)
     elif step.geom.twod_xz:
-        xmesh, ymesh = step.geom.x_mesh[:, 0, :], step.geom.z_mesh[:, 0, :]
-        fld = fld[:, 0, :, 0]
-    elif step.geom.cartesian and step.geom.twod_yz:
-        xmesh, ymesh = step.geom.y_mesh[0, :, :], step.geom.z_mesh[0, :, :]
-        fld = fld[0, :, :, 0]
-    else:  # spherical yz
-        xmesh, ymesh = step.geom.x_mesh[0, :, :], step.geom.y_mesh[0, :, :]
-        fld = fld[0, :, :, 0]
-    return xmesh, ymesh, fld
+        xcoord = step.geom.x_walls if hwalls else step.geom.x_centers
+        ycoord = step.geom.z_walls if walls else step.geom.z_centers
+        vals = fld.values[:, 0, :, 0]
+    else:  # twod_yz
+        xcoord = step.geom.y_walls if hwalls else step.geom.y_centers
+        ycoord = step.geom.z_walls if walls else step.geom.z_centers
+        if step.geom.curvilinear:
+            pmesh, rmesh = np.meshgrid(xcoord, ycoord, indexing="ij")
+            xmesh, ymesh = rmesh * np.cos(pmesh), rmesh * np.sin(pmesh)
+        vals = fld.values[0, :, :, 0]
+    if step.geom.cartesian:
+        xmesh, ymesh = np.meshgrid(xcoord, ycoord, indexing="ij")
+    return xmesh, ymesh, vals, fld.meta
 
 
-def get_meshes_vec(step, var):
+def get_meshes_vec(step: Step, var: str) -> Tuple[ndarray, ndarray, ndarray, ndarray]:
     """Return vector field components along with coordinates meshes.
 
     Only works properly in 2D geometry and 3D cartesian.
 
     Args:
-        step (:class:`~stagpy.stagyydata._Step`): a step of a StagyyData
-            instance.
-        var (str): vector field name.
+        step: a :class:`~stagpy._step.Step` of a StagyyData instance.
+        var: vector field name.
     Returns:
-        tuple of :class:`numpy.array`: xmesh, ymesh, fldx, fldy
-            2D arrays containing respectively the x position, y position, x
-            component and y component of the requested vector field.
+        tuple (xmesh, ymesh, fldx, fldy).  2D arrays containing respectively
+        the x position, y position, x component and y component of the
+        requested vector field.
     """
     if step.geom.threed and step.geom.cartesian:
-        (xmesh, ymesh), (vec1, vec2) = _threed_extract(step, var)
+        (xcoord, ycoord), (vec1, vec2) = _threed_extract(step, var)
     elif step.geom.twod_xz:
-        xmesh, ymesh = step.geom.x_mesh[:, 0, :], step.geom.z_mesh[:, 0, :]
-        vec1 = step.fields[var + '1'][:, 0, :, 0]
-        vec2 = step.fields[var + '3'][:, 0, :, 0]
+        xcoord, ycoord = step.geom.x_walls, step.geom.z_centers
+        vec1 = step.fields[var + "1"].values[:, 0, :, 0]
+        vec2 = step.fields[var + "3"].values[:, 0, :, 0]
     elif step.geom.cartesian and step.geom.twod_yz:
-        xmesh, ymesh = step.geom.y_mesh[0, :, :], step.geom.z_mesh[0, :, :]
-        vec1 = step.fields[var + '2'][0, :, :, 0]
-        vec2 = step.fields[var + '3'][0, :, :, 0]
+        xcoord, ycoord = step.geom.y_walls, step.geom.z_centers
+        vec1 = step.fields[var + "2"].values[0, :, :, 0]
+        vec2 = step.fields[var + "3"].values[0, :, :, 0]
     else:  # spherical yz
-        xmesh, ymesh = step.geom.x_mesh[0, :, :], step.geom.y_mesh[0, :, :]
-        pmesh = step.geom.p_mesh[0, :, :]
-        vec_phi = step.fields[var + '2'][0, :, :, 0]
-        vec_r = step.fields[var + '3'][0, :, :, 0]
+        pcoord = step.geom.p_walls
+        pmesh = np.outer(pcoord, np.ones(step.geom.nrtot))
+        vec_phi = step.fields[var + "2"].values[0, :, :, 0]
+        vec_r = step.fields[var + "3"].values[0, :, :, 0]
         vec1 = vec_r * np.cos(pmesh) - vec_phi * np.sin(pmesh)
         vec2 = vec_phi * np.cos(pmesh) + vec_r * np.sin(pmesh)
+        pcoord, rcoord = step.geom.p_walls, step.geom.r_centers
+        pmesh, rmesh = np.meshgrid(pcoord, rcoord, indexing="ij")
+        xmesh, ymesh = rmesh * np.cos(pmesh), rmesh * np.sin(pmesh)
+    if step.geom.cartesian:
+        xmesh, ymesh = np.meshgrid(xcoord, ycoord, indexing="ij")
     return xmesh, ymesh, vec1, vec2
 
 def get_meshes_vec_spherical(step, var):
@@ -185,22 +230,33 @@ def set_of_vars(arg_plot):
     return sovs
 
 
-def plot_scalar(step, var, field=None, axis=None,print_time = None, print_substellar = False,draw_circle = False, text_size = 9 ,paper_label = None,cbar_remove = False, cbar_invisible = False,more_info=False,text_color = 'black', **extra):
+def plot_scalar(step: Step,
+    var: str,
+    field: Optional[ndarray] = None,
+    axis: Optional[Axes] = None,
+    print_time = None, 
+    print_substellar = False,
+    draw_circle = False, 
+    text_size = 9 ,
+    paper_label = None,
+    cbar_remove = False, 
+    cbar_invisible = False,
+    more_info=False,
+    text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field.
 
     Args:
-        step (:class:`~stagpy.stagyydata._Step`): a step of a StagyyData
-            instance.
-        var (str): the scalar field name.
-        field (:class:`numpy.array`): if not None, it is plotted instead of
-            step.fields[var].  This is useful to plot a masked or rescaled
-            array.  Note that if conf.scaling.dimensional is True, this
-            field will be scaled accordingly.
-        axis (:class:`matplotlib.axes.Axes`): the axis objet where the field
-            should be plotted.  If set to None, a new figure with one subplot
-            is created.
-        extra (dict): options that will be passed on to
+        step: a :class:`~stagpy._step.Step` of a StagyyData instance.
+        var: the scalar field name.
+        field: if not None, it is plotted instead of step.fields[var].  This is
+            useful to plot a masked or rescaled array.  Note that if
+            conf.scaling.dimensional is True, this field will be scaled
+            accordingly.
+        axis: the :class:`matplotlib.axes.Axes` object where the field should
+            be plotted.  If set to None, a new figure with one subplot is
+            created.
+        extra: options that will be passed on to
             :func:`matplotlib.axes.Axes.pcolormesh`.
     Returns:
         fig, axis, surf, cbar
@@ -209,17 +265,23 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
             :func:`~matplotlib.axes.Axes.pcolormesh`, and the colorbar returned
             by :func:`matplotlib.pyplot.colorbar`.
     """
-
-    if var in phyvars.FIELD:
-        meta = phyvars.FIELD[var]
-    else:
-        meta = phyvars.FIELD_EXTRA[var]
-        meta = phyvars.Varf(misc.baredoc(meta.description), meta.dim)
     if step.geom.threed and step.geom.spherical:
-        raise NotAvailableError(
-            'plot_scalar not implemented for 3D spherical geometry')
+        raise NotAvailableError("plot_scalar not implemented for 3D spherical geometry")
 
-    xmesh, ymesh, fld = get_meshes_fld(step, var)
+    xmesh, ymesh, fld, meta = get_meshes_fld(
+        step, var, walls=not conf.field.interpolate
+    )
+    # interpolate at cell centers, this should be abstracted by field objects
+    # via an "at_cell_centers" method or similar
+    if fld.shape[0] > max(step.geom.nxtot, step.geom.nytot):
+        fld = (fld[:-1] + fld[1:]) / 2
+
+    if conf.field.interpolate and step.geom.spherical and step.geom.twod_yz:
+        # add one point to close spherical annulus
+        xmesh = np.concatenate((xmesh, xmesh[:1]), axis=0)
+        ymesh = np.concatenate((ymesh, ymesh[:1]), axis=0)
+        newline = (fld[:1] + fld[-1:]) / 2
+        fld = np.concatenate((fld, newline), axis=0)
     xmin, xmax = xmesh.min(), xmesh.max()
     ymin, ymax = ymesh.min(), ymesh.max()
 
@@ -237,16 +299,15 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
     else:
         fig = axis.get_figure()
 
-    if step.sdat.par['magma_oceans_in']['magma_oceans_mode']:
-        rcmb = step.sdat.par['geometry']['r_cmb']
+    if step.sdat.par["magma_oceans_in"]["evolving_magma_oceans"]:
+        rcmb = step.sdat.par["geometry"]["r_cmb"]
         xmax = rcmb + 1
         ymax = xmax
         xmin = -xmax
         ymin = -ymax
-        rsurf = xmax if step.timeinfo['thick_tmo'] > 0 \
-            else step.geom.r_mesh[0, 0, -3]
-        cmb = mpat.Circle((0, 0), rcmb, color='dimgray', zorder=0)
-        psurf = mpat.Circle((0, 0), rsurf, color='indianred', zorder=0)
+        rsurf = xmax if step.timeinfo["thick_tmo"] > 0 else step.geom.r_walls[-3]
+        cmb = mpat.Circle((0, 0), rcmb, color="dimgray", zorder=0)
+        psurf = mpat.Circle((0, 0), rsurf, color="indianred", zorder=0)
         axis.add_patch(psurf)
         axis.add_patch(cmb)
 
@@ -255,29 +316,32 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
         cmap = vik_map, 
         vmin=conf.plot.vmin,
         vmax=conf.plot.vmax,
-        norm=mpl.colors.LogNorm() if var == 'eta' else None,
+        norm=mpl.colors.LogNorm() if var == "eta" else None,
         rasterized=conf.plot.raster,
-        shading='gouraud' if conf.field.interpolate else 'flat',
+        shading="gouraud" if conf.field.interpolate else "flat",
     )
     extra_opts.update(extra)
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
 
     cbar = None
 
-    if conf.field.colorbar: #TGM: turned this off by default as it is plotted below (for now)
-        print(conf.field.colorbar)
-        cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb)
-
-        cbar.set_label(meta.description +
-                       (' pert.' if conf.field.perturbation else '') +
-                       (f' ({unit})' if unit else ''))
+    conf.field.colorbar=False
+    if conf.field.colorbar: #TGM: turned this off by default as it is plotted below (for now), edit July23: try merge this
+        print('bool colorbar', conf.field.colorbar)
+        cax = make_axes_locatable(axis).append_axes("right", size="3%", pad=0.15)
+        cbar = plt.colorbar(surf, cax=cax)
+        cbar.set_label(
+            meta.description
+            + (" pert." if conf.field.perturbation else "")
+            + (f" ({unit})" if unit else "")
+        )
     if step.geom.spherical or conf.plot.ratio is None:
-        axis.axis('equal')
-        axis.axis('off')
+        axis.set_aspect("equal")
+        axis.set_axis_off()
     else:
         axis.set_aspect(conf.plot.ratio / axis.get_data_ratio())
 
-    axis.set_adjustable('box')
+    axis.set_adjustable("box")
     axis.set_xlim(xmin, xmax)
     axis.set_ylim(ymin, ymax)
 
@@ -353,56 +417,59 @@ def plot_scalar(step, var, field=None, axis=None,print_time = None, print_subste
     return fig, axis, surf, cbar
 
 
-def plot_iso(axis, step, var, **extra):
+def plot_iso(
+    axis: Axes, step: Step, var: str, field: Optional[ndarray] = None, **extra: Any
+) -> None:
     """Plot isocontours of scalar field.
 
     Args:
-        axis (:class:`matplotlib.axes.Axes`): the axis handler of an
-            existing matplotlib figure where the isocontours should
-            be plotted.
-        step (:class:`~stagpy.stagyydata._Step`): a step of a StagyyData
-            instance.
-        var (str): the scalar field name.
-        extra (dict): options that will be passed on to
+        axis: the :class:`matplotlib.axes.Axes` of an existing matplotlib
+            figure where the isocontours should be plotted.
+        step: a :class:`~stagpy._step.Step` of a StagyyData instance.
+        var: the scalar field name.
+        field: if not None, it is plotted instead of step.fields[var].  This is
+            useful to plot a masked or rescaled array.  Note that if
+            conf.scaling.dimensional is True, this field will be scaled
+            accordingly.
+        extra: options that will be passed on to
             :func:`matplotlib.axes.Axes.contour`.
     """
-    xmesh, ymesh, fld = get_meshes_fld(step, var)
+    xmesh, ymesh, fld, _ = get_meshes_fld(step, var)
+
+    if field is not None:
+        fld = field
+
     if conf.field.shift:
         fld = np.roll(fld, conf.field.shift, axis=0)
-    extra_opts = dict(linewidths=1)
-    if 'cmap' not in extra and conf.field.isocolors:
-        extra_opts['colors'] = conf.field.isocolors.split(',')
-    elif 'colors' not in extra:
-        extra_opts['cmap'] = conf.field.cmap.get(var)
+    extra_opts: Dict[str, Any] = dict(linewidths=1)
+    if "cmap" not in extra and conf.field.isocolors:
+        extra_opts["colors"] = conf.field.isocolors
+    elif "colors" not in extra:
+        extra_opts["cmap"] = conf.field.cmap.get(var)
+    if conf.plot.isolines:
+        extra_opts["levels"] = sorted(conf.plot.isolines)
     extra_opts.update(extra)
     axis.contour(xmesh, ymesh, fld, levels = [0.0,0.5,0.99999],colors=('black','peru','red'),alpha=0.7,**extra_opts)
     #axis.clabel(CS, inline=1, fontsize=10)
 
 
-def plot_vec(axis, step, var,arrow_v=0.005, mask_highv = False, q_scale_factor = 0.05, use_cm = False):
+
+def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False, q_scale_factor = 0.05, use_cm = False) -> None:
     """Plot vector field.
 
     Args:
-        axis (:class:`matplotlib.axes.Axes`): the axis handler of an
-            existing matplotlib figure where the vector field should
-            be plotted.
-        step (:class:`~stagpy.stagyydata._Step`): a step of a StagyyData
-            instance.
-        var (str): the vector field name.
+        axis: the :class:`matplotlib.axes.Axes` of an existing matplotlib
+            figure where the vector field should be plotted.
+        step: a :class:`~stagpy._step.Step` of a StagyyData instance.
+        var: the vector field name.
     """
     xmesh, ymesh, vec1, vec2 = get_meshes_vec(step, var)
 
+
+    #######TGM: Some options to make vectors smaller/larger because of melt phases##########
     #55cnc
     dipz_factor = 15 
-    #LHS? 
-
-    #xmesh_f, ymesh_f, fld_f = get_meshes_fld(step, 'mf')
-
-
-
-
-
-
+    #LHS?
     dipz = step.geom.nztot // dipz_factor
     sp = 1.0
     if conf.field.shift:
@@ -414,29 +481,10 @@ def plot_vec(axis, step, var,arrow_v=0.005, mask_highv = False, q_scale_factor =
         dipx = step.geom.nytot if step.geom.twod_yz else step.geom.nxtot
         dipx = int(dipx // 10 * conf.plot.ratio) + 1
 
-
-    '''    
-    Q1 = plt.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
-                vec1[::dipx, ::dipz], vec2[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, color = 'black',scale=None, scale_units='inches')
-    Q1._init()
-    assert isinstance(Q1.scale, float)
-    
-    print('QSCALE', Q1.scale)
-    '''
-    #xmesh = np.ma.masked_where(fld_f > 0.5, xmesh)
-
     vec_norm = np.sqrt(vec1**2.0 + vec2**2.0)
-
-    #ymesh = np.ma.masked_where(fld_f > 0.5, ymesh)
-    #vec1 = np.ma.masked_where(fld_f > 0.5, vec1)
-    #vec2 = np.ma.masked_where(fld_f > 0.5, vec2)
-
     if mask_highv == False:
         vec1_lowv = vec1
         vec2_lowv = vec2 
-
-
-
     else: 
         highv_factor = 10.0
         vec1_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec1)
@@ -464,27 +512,30 @@ def plot_vec(axis, step, var,arrow_v=0.005, mask_highv = False, q_scale_factor =
                     scale_v*vec1_highv[::dipx, ::dipz], scale_v*vec2_highv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale*highv_factor, color = 'red', scale_units ='inches')
         qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8, v_units.format(arrow_v*highv_factor/cm_scale), labelpos='E',
                        coordinates='figure',labelsep=0.01, color = 'red') 
+    ##########################################################################################
 
-def _findminmax(sdat, sovs):
+
+def _findminmax(
+    sdat: StagyyData, sovs: Iterable[str]
+) -> Dict[str, Tuple[float, float]]:
     """Find min and max values of several fields."""
-    minmax = {}
+    minmax: Dict[str, Tuple[float, float]] = {}
     for step in sdat.walk.filter(snap=True):
         for var in sovs:
             if var in step.fields:
-                if var in phyvars.FIELD:
-                    dim = phyvars.FIELD[var].dim
-                else:
-                    dim = phyvars.FIELD_EXTRA[var].dim
-                field, _ = sdat.scale(step.fields[var], dim)
+                field = step.fields[var]
+                vals, _ = sdat.scale(field.values, field.meta.dim)
                 if var in minmax:
-                    minmax[var] = (min(minmax[var][0], np.nanmin(field)),
-                                   max(minmax[var][1], np.nanmax(field)))
+                    minmax[var] = (
+                        min(minmax[var][0], np.nanmin(vals)),
+                        max(minmax[var][1], np.nanmax(vals)),
+                    )
                 else:
-                    minmax[var] = np.nanmin(field), np.nanmax(field)
+                    minmax[var] = np.nanmin(vals), np.nanmax(vals)
     return minmax
 
 
-def cmd():
+def cmd() -> None:
     """Implementation of field subcommand.
 
     Other Parameters:
@@ -492,9 +543,8 @@ def cmd():
         conf.core
     """
     sdat = StagyyData()
-    lovs = misc.list_of_vars(conf.field.plot)
     # no more than two fields in a subplot
-    lovs = [[slov[:2] for slov in plov] for plov in lovs]
+    lovs = [[slov[:2] for slov in plov] for plov in conf.field.plot]
     minmax = {}
     if conf.plot.cminmax:
         conf.plot.vmin = None
@@ -503,49 +553,47 @@ def cmd():
         minmax = _findminmax(sdat, sovs)
     for step in sdat.walk.filter(snap=True):
         for vfig in lovs:
-            fig, axes = plt.subplots(ncols=len(vfig), squeeze=False,
-                                     figsize=(9 * len(vfig), 6))
+            fig, axes = plt.subplots(
+                ncols=len(vfig), squeeze=False, figsize=(6 * len(vfig), 6)
+            )
             for axis, var in zip(axes[0], vfig):
                 if var[0] not in step.fields:
                     print(f"{var[0]!r} field on snap {step.isnap} not found")
                     continue
-                opts = {}
+                opts: Dict[str, Any] = {}
                 if var[0] in minmax:
                     opts = dict(vmin=minmax[var[0]][0], vmax=minmax[var[0]][1])
                 plot_scalar(step, var[0], axis=axis, **opts)
                 if len(var) == 2:
                     if valid_field_var(var[1]):
                         plot_iso(axis, step, var[1])
-                    elif valid_field_var(var[1] + '1'):
+                    elif valid_field_var(var[1] + "1"):
                         plot_vec(axis, step, var[1])
             if conf.field.timelabel:
-                time, unit = sdat.scale(step.timeinfo['t'], 's')
-                time = misc.scilabel(time)
-                axes[0, 0].text(0.02, 1.02, f'$t={time}$ {unit}',
-                                transform=axes[0, 0].transAxes)
-            oname = '_'.join(chain.from_iterable(vfig))
+                time, unit = sdat.scale(step.timeinfo["t"], "s")
+                time = _helpers.scilabel(time)
+                axes[0, 0].text(
+                    0.02, 1.02, f"$t={time}$ {unit}", transform=axes[0, 0].transAxes
+                )
+            oname = "_".join(chain.from_iterable(vfig))
             plt.tight_layout(w_pad=3)
-            misc.saveplot(fig, oname, step.isnap)
-
-#Wmaybe change this to get_sfield()... 
-def get_heatflux(step, var):
-    surface_fld = step.sfields[var][0,:,0]
-    #var = 'hfz'
-    #_,_,fld = get_meshes_fld(step, var)
-    #surface_fld = fld[:,-1]
-    return surface_fld
-
-def get_cmbheatflux(step, var):
-    cmb_fld = step.sfields[var][0,:,0]
-    return cmb_fld
-
-def get_crust(step, var):
-    crust_fld = step.sfields[var][0,:,0]
-    return crust_fld
+            _helpers.saveplot(fig, oname, step.isnap)
 
 
-def get_heatflux(step, var):
-    surface_fld = step.sfields[var][0,:,0]
-    return surface_fld
+
+def get_sfield(step, var):
+    sfld = step.sfields[var].values[0,:,0]
+    return sfld
+
+def get_sfield_pp(step):
+    xmesh, ymesh, T_field, meta = get_meshes_fld(step,'T')
+    t_s = T_field[:,-1] #surface (top cell)
+    t_d = T_field[:,-2] #one below top cell
+    _, _, tcond , _ = get_meshes_fld(step,'tcond') 
+    tcond_s = tcond[:,-1] #top cell
+    print('tcond shape', np.shape(tcond))
+    sfld = tcond_s*(t_d-t_s)/38316.535949707031
+
+    return sfld
 
 
