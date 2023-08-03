@@ -782,8 +782,7 @@ class StagyyData:
         self._nfields_max: Optional[int] = 50
         # list of (istep, field_name) in memory
         self._collected_fields: List[Tuple[int, str]] = []
-
-        #self.xdmf_root = stagyyparsers.read_xdmf_root(self.hdf5 / 'Data.xmf') #TGM: not sure if still needed
+        self.xdmf_root = stagyyparsers.read_xdmf_root(self.hdf5 / 'Data.xmf')
 
     def __repr__(self) -> str:
         return f"StagyyData({self.path!r})"

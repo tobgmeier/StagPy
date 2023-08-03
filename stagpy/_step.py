@@ -379,8 +379,7 @@ class _Fields(abc.Mapping):
                     xmff = "Data.xmf"
                     header = None
                 parsed_data = stagyyparsers.read_field_h5(
-                    self.step.sdat.hdf5 / xmff, filestem, self.step.isnap, header
-                )
+                    self.step.sdat.hdf5 / xmff, filestem, self.step.isnap, header,xdmf_root_input = self.step.sdat.xdmf_root)
                 if parsed_data is not None:
                     break
 
@@ -410,7 +409,7 @@ class _Fields(abc.Mapping):
             header = stagyyparsers.field_header(binfiles.pop())
         elif self.step.sdat.hdf5:
             xmf = self.step.sdat.hdf5 / "Data.xmf"
-            header = stagyyparsers.read_geom_h5(xmf, self.step.isnap)[0]
+            header = stagyyparsers.read_geom_h5(xmf, self.step.isnap, xdmf_root_input = self.step.sdat.xdmf_root)[0]
         return header if header else None
 
     @cached_property
