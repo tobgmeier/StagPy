@@ -21,6 +21,7 @@ from . import _helpers, conf, phyvars
 from .error import NotAvailableError
 from .stagyydata import StagyyData
 import f90nml
+from cmcrameri import cm
 
 
 from matplotlib.colors import LinearSegmentedColormap
@@ -595,5 +596,151 @@ def get_sfield_pp(step):
     sfld = tcond_s*(t_d-t_s)/38316.535949707031
 
     return sfld
+
+def plot_scalar_tracers(step: Step,
+    var: str,
+    axis: Optional[Axes] = None,
+    print_time = None, 
+    print_substellar = False,
+    draw_circle = False, 
+    text_size = 9 ,
+    paper_label = None,
+    cbar_remove = False, 
+    cbar_invisible = False,
+    colorbar_label = None,
+    more_info=False,
+    text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
+
+    """Plot scalar field for tracers (technically a coloured scatter plot).
+
+    Args:
+        step: a :class:`~stagpy._step.Step` of a StagyyData instance.
+        var: the scalar field name (only tracer fields work).
+        axis: the :class:`matplotlib.axes.Axes` object where the field should
+            be plotted.  If set to None, a new figure with one subplot is
+            created.
+        extra: options that will be passed on to
+            :func:`matplotlib.axes.Axes.scatter`.
+    Returns:
+        fig, axis, surf, cbar
+            handles to various :mod:`matplotlib` objects, respectively the
+            figure, the axis, the surface returned by
+            :func:`~matplotlib.axes.Axes.pcolormesh`, and the colorbar returned
+            by :func:`matplotlib.pyplot.colorbar`.
+    """
+    if step.geom.threed and step.geom.spherical:
+        raise NotAvailableError("plot_scalar not implemented for 3D spherical geometry")
+
+    x_pos = step.tracers['x'][0][::2] #TGM: could change ::2 to some variable depending on how many tracers we want to plot
+    y_pos = step.tracers['y'][0][::2]
+    field_tracer = step.tracers[var][0][::2]
+
+    xmin, xmax = x_pos.min(), x_pos.max()
+    ymin, ymax = y_pos.min(), y_pos.max()
+
+
+
+    if axis is None:
+        fig, axis = plt.subplots(ncols=1)
+    else:
+        fig = axis.get_figure()
+
+    if step.sdat.par["magma_oceans_in"]["evolving_magma_oceans"]:
+        rcmb = step.sdat.par["geometry"]["r_cmb"]
+        xmax = rcmb + 1
+        ymax = xmax
+        xmin = -xmax
+        ymin = -ymax
+        rsurf = xmax if step.timeinfo["thick_tmo"] > 0 else step.geom.r_walls[-3]
+        cmb = mpat.Circle((0, 0), rcmb, color="dimgray", zorder=0)
+        psurf = mpat.Circle((0, 0), rsurf, color="indianred", zorder=0)
+        axis.add_patch(psurf)
+        axis.add_patch(cmb)
+
+    extra_opts = dict( 
+        vmin=conf.plot.vmin,
+        vmax=conf.plot.vmax,
+    )
+    extra_opts.update(extra)
+    surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0 ,cmap=cm.batlow,edgecolors=None, **extra_opts)
+
+    
+    if step.geom.spherical or conf.plot.ratio is None:
+        axis.set_aspect("equal")
+        axis.set_axis_off()
+    else:
+        axis.set_aspect(conf.plot.ratio / axis.get_data_ratio())
+
+    axis.set_adjustable("box")
+    axis.set_xlim(xmin, xmax)
+    axis.set_ylim(ymin, ymax)
+
+    divider = make_axes_locatable(axis)
+    #cax = divider.append_axes("right", size="5%", pad=+0.05)
+    #cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb,orientation="vertical", cax=cax)
+    
+    cax = divider.append_axes("bottom", size="5%", pad=+0.05)    
+    cbar = plt.colorbar(surf,orientation="horizontal",cax=cax)
+    cbar.set_label(colorbar_label,color=text_color, size = text_size) #TGM: update this, so we can use the metadata?
+    cbar.ax.tick_params(labelsize=text_size+1, color=text_color)
+    cbar.outline.set_edgecolor(text_color)
+    #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
+    cbar.ax.xaxis.set_tick_params(color=text_color)
+    plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
+
+
+    cax2 = divider.append_axes("top", size="6%", pad=+0.0)
+
+    cax2.axis('off')
+
+    nml = step.sdat.par
+
+    eta0 = str(int(math.log10(nml['viscosity']['eta0'])))
+    Tcmb = str(int(nml['boundaries']['botT_val']))
+    Tday = str(int(nml['boundaries']['topT_locked_subsolar']))
+    Tnight = str(int(nml['boundaries']['topT_locked_farside']))
+    radius  = nml['geometry']['r_cmb']+nml['geometry']['d_dimensional']
+    rdim  = nml['geometry']['d_dimensional']
+    rcmb = nml['geometry']['r_cmb']
+    g_dim = nml['refstate']['g_dimensional']
+    rppv = rcmb+(rdim-2740e3*(9.81/g_dim))
+    rda = 0.5*(1-rcmb/(rcmb+rdim)) + 0.005 # without 0.03 this is the rdimensional in the axis system.
+    if draw_circle == True:
+        circle1 = plt.Circle((0, 0), rppv, edgecolor='w', linestyle = '--', fill=False, linewidth=1.0)
+        axis.add_artist(circle1)
+    if print_substellar == True:
+        cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color=text_color)
+        cax2.text(0.48, 0.4, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
+        cax2.text(0.52, 0.4, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
+        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold')
+        axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
+        axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
+    if print_time != None:
+        if paper_label != None:
+            cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(0.0, 0.4, '('+paper_label+')',horizontalalignment='left',verticalalignment='center',color=text_color, size = text_size,fontweight='bold')
+            if more_info == True:
+                axis.text(0.5, rda+0.055, "(Longitude)", ha="center", va="bottom",color=text_color,size=text_size,transform=axis.transAxes)
+                axis.text(0.0, 0.0, '(Fe Core)',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+        #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
+        else:
+            cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+        #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
+
+    if cbar_remove == True:
+        cbar.remove()
+        cax.axis('off')
+    if cbar_invisible == True:
+        cbar.remove()
+        cax4 = divider.append_axes("bottom", size="5%", pad=+0.05,frameon=False)
+        cax4.set_xlabel('Temperature',alpha=0)
+        cax4.set_xticks([])
+        cax4.set_yticks([])
+        #cax4.axis('off')
+
+    return fig, axis, surf, cbar
 
 
