@@ -266,16 +266,30 @@ def plot_scalar(step: Step,
             :func:`~matplotlib.axes.Axes.pcolormesh`, and the colorbar returned
             by :func:`matplotlib.pyplot.colorbar`.
     """
+
+    #conf.field.interpolate = False #TGM: add this to make sure not to interpolate
+
     if step.geom.threed and step.geom.spherical:
         raise NotAvailableError("plot_scalar not implemented for 3D spherical geometry")
 
     xmesh, ymesh, fld, meta = get_meshes_fld(
-        step, var, walls=not conf.field.interpolate
+        step, var, walls= not conf.field.interpolate
     )
     # interpolate at cell centers, this should be abstracted by field objects
     # via an "at_cell_centers" method or similar
+
+
     if fld.shape[0] > max(step.geom.nxtot, step.geom.nytot):
         fld = (fld[:-1] + fld[1:]) / 2
+
+
+    
+    if field is not None:
+        fld = field
+    if conf.field.perturbation:
+        fld = fld - np.mean(fld, axis=0)
+    if conf.field.shift:
+        fld = np.roll(fld, conf.field.shift, axis=0)
 
     if conf.field.interpolate and step.geom.spherical and step.geom.twod_yz:
         # add one point to close spherical annulus
@@ -285,13 +299,6 @@ def plot_scalar(step: Step,
         fld = np.concatenate((fld, newline), axis=0)
     xmin, xmax = xmesh.min(), xmesh.max()
     ymin, ymax = ymesh.min(), ymesh.max()
-
-    if field is not None:
-        fld = field
-    if conf.field.perturbation:
-        fld = fld - np.mean(fld, axis=0)
-    if conf.field.shift:
-        fld = np.roll(fld, conf.field.shift, axis=0)
 
     fld, unit = step.sdat.scale(fld, meta.dim)
 
@@ -319,7 +326,7 @@ def plot_scalar(step: Step,
         vmax=conf.plot.vmax,
         norm=mpl.colors.LogNorm() if var == "eta" else None,
         rasterized=conf.plot.raster,
-        shading="gouraud" if conf.field.interpolate else "flat",
+        shading='gouraud' if conf.field.interpolate else 'flat',
     )
     extra_opts.update(extra)
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
@@ -631,9 +638,10 @@ def plot_scalar_tracers(step: Step,
     if step.geom.threed and step.geom.spherical:
         raise NotAvailableError("plot_scalar not implemented for 3D spherical geometry")
 
-    x_pos = step.tracers['x'][0][::2] #TGM: could change ::2 to some variable depending on how many tracers we want to plot
-    y_pos = step.tracers['y'][0][::2]
-    field_tracer = step.tracers[var][0][::2]
+    x_pos = step.tracers['x'][0][::] #TGM: could change ::2 to some variable depending on how many tracers we want to plot
+    y_pos = step.tracers['y'][0][::]
+    field_tracer = step.tracers[var][0][::]
+    print('MINMAX TRACER', np.min(field_tracer), np.max(field_tracer))
 
     xmin, xmax = x_pos.min(), x_pos.max()
     ymin, ymax = y_pos.min(), y_pos.max()
@@ -662,7 +670,10 @@ def plot_scalar_tracers(step: Step,
         vmax=conf.plot.vmax,
     )
     extra_opts.update(extra)
-    surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0 ,cmap=cm.batlow,edgecolors=None, **extra_opts)
+    if(var == "Water conc." or  var   == "Carbon conc."):
+         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0 ,norm=matplotlib.colors.LogNorm(vmin=0.001, vmax=1000),cmap=cm.batlow,edgecolors=None, **extra_opts)
+    else: 
+         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0, cmap=cm.batlow,edgecolors=None, **extra_opts)
 
     
     if step.geom.spherical or conf.plot.ratio is None:
