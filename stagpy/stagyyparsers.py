@@ -19,6 +19,8 @@ import h5py
 import numpy as np
 import pandas as pd
 
+import pdb
+
 from .error import ParsingError
 from .phyvars import FIELD_FILES_H5, SFIELD_FILES_H5
 
@@ -680,7 +682,6 @@ def _ncores(meshes: List[Dict[str, ndarray]], twod: Optional[str]) -> ndarray:
     ):
         nns[2] += 1
         nnpb -= nns[0] * nns[1]
-    #print('cores', nns)
     return np.array(nns)
 
 
@@ -1075,10 +1076,12 @@ def read_tracers_h5(
     for elt_subdomain in xdmf_root[0][0][snapshot].findall("Grid"):
         elt_name = _try_get(xdmf_file, elt_subdomain, "Name")
         ibk = int(elt_name.startswith("meshYang"))
+        print('elt_name', elt_name)
         if position:
             for data_attr in elt_subdomain.findall("Geometry"):
                 for data_item, axis in zip(data_attr.findall("DataItem"), "xyz"):
                     icore, data = _get_field(xdmf_file, data_item)
+                    print('icore data', axis, icore, data)
                     tra[axis][ibk][icore] = data
         for data_attr in elt_subdomain.findall("Attribute"):
             if data_attr.get("Name") != infoname:
@@ -1089,12 +1092,14 @@ def read_tracers_h5(
             tra[infoname][ibk][icore] = data
     tra_concat: Dict[str, List[ndarray]] = {}
     for info in tra:
+        print('info', info)
         tra[info] = [trab for trab in tra[info] if trab]  # remove empty blocks
         tra_concat[info] = []
         for trab in tra[info]:
             tra_concat[info].append(
                 np.concatenate([trab[icore] for icore in range(len(trab))])
             )
+    #pdb.set_trace()
     return tra_concat
 
 

@@ -168,6 +168,8 @@ SFIELD: Mapping[str, Varf] = MappingProxyType(
         "fstop": Varf("Heat flux from spectrum at top", "W/m2"),
         "fsbot": Varf("Heat flux from spectrum at bottom", "W/m2"),
         "crust": Varf("Crustal thickness", "m"),
+        "erupt": Varf("Eruption rate", "1/s"),
+        "erupt_hf": Varf("Eruption rate", "W/m2"),
     }
 )
 
@@ -195,6 +197,8 @@ SFIELD_FILES_H5: Mapping[str, List[str]] = MappingProxyType(
         "BottomHFSpectrum": ["fsbot"],
         "TopHFSpectrum": ["fstop"],
         "CrustThickness": ["crust"],
+        "Erupted": ["erupt"],
+        "EruptionHeatflux": ["erupt_hf"],
     }
 )
 
