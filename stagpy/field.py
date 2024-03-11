@@ -463,7 +463,7 @@ def plot_iso(
 
 
 
-def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False, q_scale_factor = 0.05, use_cm = False) -> None:
+def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False, q_scale_factor = 0.05, use_cm = False,text_color=text_color) -> None:
     """Plot vector field.
 
     Args:
@@ -480,7 +480,7 @@ def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False,
     dipz_factor = 15 
     #LHS?
     dipz = step.geom.nztot // dipz_factor
-    sp = 1.0
+    sp = 1.5
     if conf.field.shift:
         vec1 = np.roll(vec1, conf.field.shift, axis=0)
         vec2 = np.roll(vec2, conf.field.shift, axis=0)
@@ -495,7 +495,7 @@ def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False,
         vec1_lowv = vec1
         vec2_lowv = vec2 
     else: 
-        highv_factor = 10.0
+        highv_factor = 5.0
         vec1_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec1)
         vec2_lowv = np.ma.masked_where(vec_norm > 2*np.mean(vec_norm), vec2)
         vec1_highv = np.ma.masked_where(vec_norm < 2*np.mean(vec_norm), vec1)
@@ -514,13 +514,13 @@ def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False,
     Q = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                 scale_v*vec1_lowv[::dipx, ::dipz], scale_v*vec2_lowv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale, color = 'black', scale_units ='inches')
     qk = axis.quiverkey(Q, 0.7, 0.85, arrow_v*3.171e-8, v_units.format(arrow_v/cm_scale), labelpos='E',
-                   coordinates='figure',labelsep=0.01, color = 'black') 
+                   coordinates='figure',labelsep=0.01, color = 'black',labelcolor=text_color) 
 
     if mask_highv == True: 
         Q2 = axis.quiver(xmesh[::dipx, ::dipz], ymesh[::dipx, ::dipz],
                     scale_v*vec1_highv[::dipx, ::dipz], scale_v*vec2_highv[::dipx, ::dipz], headwidth = 3/sp, headlength = 5/sp, headaxislength = 4.5/sp, width = 0.0025, scale = q_scale*highv_factor, color = 'red', scale_units ='inches')
         qk = axis.quiverkey(Q2, 0.7, 0.8, arrow_v*highv_factor*3.171e-8, v_units.format(arrow_v*highv_factor/cm_scale), labelpos='E',
-                       coordinates='figure',labelsep=0.01, color = 'red') 
+                       coordinates='figure',labelsep=0.01, color = 'red', labelcolor=text_color) 
     ##########################################################################################
 
 
