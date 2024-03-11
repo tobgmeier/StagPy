@@ -463,7 +463,7 @@ def plot_iso(
 
 
 
-def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False, q_scale_factor = 0.05, use_cm = False,text_color=text_color) -> None:
+def plot_vec(axis: Axes, step: Step, var: str,arrow_v=0.005, mask_highv = False, q_scale_factor = 0.05, use_cm = False,text_color='black') -> None:
     """Plot vector field.
 
     Args:
