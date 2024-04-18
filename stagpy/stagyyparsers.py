@@ -35,7 +35,9 @@ if typing.TYPE_CHECKING:
 write_hdf_files = True
 def append_to_text_file(hdf_data_name, file_path):
     try:
-        with open(file_path, 'r+') as file:
+        with open(file_path, 'a+') as file:  # 'a+' mode creates the file if it doesn't exist
+            # Move cursor to the beginning of the file
+            file.seek(0)
             # Read all lines from the file
             lines = file.readlines()
             # Check if the string is already in the file
@@ -47,7 +49,6 @@ def append_to_text_file(hdf_data_name, file_path):
                 print("Text already exists in", file_path)
     except Exception as e:
         print("An error occurred:", e)
-
 
 def _tidy_names(
     names: List[str], nnames: int, extra_names: Optional[List[str]] = None
