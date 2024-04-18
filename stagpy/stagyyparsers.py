@@ -32,6 +32,22 @@ if typing.TYPE_CHECKING:
     from numpy import ndarray
     from pandas import DataFrame
 
+write_hdf_files = True
+def append_to_text_file(hdf_data_name, file_path):
+    try:
+        with open(file_path, 'r+') as file:
+            # Read all lines from the file
+            lines = file.readlines()
+            # Check if the string is already in the file
+            if hdf_data_name + '\n' not in lines:
+                # If not, append it
+                file.write(hdf_data_name + '\n')
+                print("Text appended successfully to", file_path)
+            else:
+                print("Text already exists in", file_path)
+    except Exception as e:
+        print("An error occurred:", e)
+
 
 def _tidy_names(
     names: List[str], nnames: int, extra_names: Optional[List[str]] = None
@@ -818,6 +834,9 @@ def _get_field(xdmf_file: Path, data_item: Element) -> Tuple[int, ndarray]:
     numeral_part = group[-11:]
     icore = int(numeral_part.split("_")[-2]) - 1
     fld = None
+    hdf_str = str(h5file)
+    if write_hdf_files == True: 
+        append_to_text_file(h5file, 'hdf_files_to_copy.txt')
     try:
         fld = _read_group_h5(xdmf_file.parent / h5file, group).reshape(shp)
     except KeyError:

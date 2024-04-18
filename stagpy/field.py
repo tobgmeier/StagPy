@@ -396,7 +396,8 @@ def plot_scalar(step: Step,
         cax2.text(0.48, 0.4, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
         cax2.text(0.52, 0.4, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
         bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold')
-        axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
+        #axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
+        axis.text(-radius-0.105*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
         axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
         axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
@@ -411,7 +412,8 @@ def plot_scalar(step: Step,
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         else:
             print('TIME', print_time)
-            cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            #cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(0.5, 1.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
     if cbar_remove == True:
