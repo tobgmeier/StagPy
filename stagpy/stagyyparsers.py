@@ -18,6 +18,7 @@ import time
 import h5py
 import numpy as np
 import pandas as pd
+import os
 
 import pdb
 
@@ -32,7 +33,7 @@ if typing.TYPE_CHECKING:
     from numpy import ndarray
     from pandas import DataFrame
 
-write_hdf_files = True
+write_hdf_files = False #for data storage 
 def append_to_text_file(hdf_data_name, file_path):
     try:
         with open(file_path, 'a+') as file:  # 'a+' mode creates the file if it doesn't exist
@@ -837,7 +838,7 @@ def _get_field(xdmf_file: Path, data_item: Element) -> Tuple[int, ndarray]:
     fld = None
     hdf_str = str(h5file)
     if write_hdf_files == True: 
-        append_to_text_file(h5file, 'hdf_files_to_copy.txt')
+        append_to_text_file(str(os.getcwd())+"/"+str(xdmf_file.parent)+"/"+h5file, 'hdf_files_to_copy.txt')
     try:
         fld = _read_group_h5(xdmf_file.parent / h5file, group).reshape(shp)
     except KeyError:

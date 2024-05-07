@@ -404,7 +404,7 @@ def plot_scalar(step: Step,
         axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
     if print_time != None:
         if paper_label != None:
-            cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
             cax2.text(0.0, 0.4, '('+paper_label+')',horizontalalignment='left',verticalalignment='center',color=text_color, size = text_size,fontweight='bold')
             if more_info == True:
                 axis.text(0.5, rda+0.055, "(Longitude)", ha="center", va="bottom",color=text_color,size=text_size,transform=axis.transAxes)
@@ -412,8 +412,8 @@ def plot_scalar(step: Step,
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         else:
             print('TIME', print_time)
-            #cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
-            cax2.text(0.5, 1.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            #cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(0.5, 1.4, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
     if cbar_remove == True:
@@ -736,7 +736,7 @@ def plot_scalar_tracers(step: Step,
         axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
     if print_time != None:
         if paper_label != None:
-            cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
             cax2.text(0.0, 0.4, '('+paper_label+')',horizontalalignment='left',verticalalignment='center',color=text_color, size = text_size,fontweight='bold')
             if more_info == True:
                 axis.text(0.5, rda+0.055, "(Longitude)", ha="center", va="bottom",color=text_color,size=text_size,transform=axis.transAxes)
@@ -744,7 +744,7 @@ def plot_scalar_tracers(step: Step,
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         else:
             print('PRINT TIME', print_time)
-            cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyrs',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
     if cbar_remove == True:
