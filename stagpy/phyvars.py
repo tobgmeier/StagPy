@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
     from .datatypes import Field, Rprof, Tseries
     from .stagyydata import StagyyData, _Scales
 
-
+#First is string used for StagPy, then what i means. 
 FIELD: Mapping[str, Varf] = MappingProxyType(
     {
         "T": Varf("Temperature", "K"),
@@ -68,6 +68,8 @@ FIELD: Mapping[str, Varf] = MappingProxyType(
         "cp": Varf('Heat Capacity', 'J/(kg.K)'),
         "hfz": Varf('Radial heat flux', 'W/m$^{2}$'),
         "tcond": Varf("Thermal Conductivity", "W/(m.K)"),
+        "bs": Varf("Basalt fraction", "1"),
+        "hz": Varf("Harzburgite fraction", "1"),
     }
 )
 
@@ -77,6 +79,8 @@ FIELD_EXTRA: Mapping[str, Callable[[Step], Field]] = MappingProxyType(
     }
 )
 
+
+#First is +op indicator then the StagPy corresponding variable
 FIELD_FILES: Mapping[str, List[str]] = MappingProxyType(
     {
         "t": ["T"],
@@ -108,9 +112,12 @@ FIELD_FILES: Mapping[str, List[str]] = MappingProxyType(
         "ex": ["thermalexpan"],
         "cp": ["heatcap"],
         "hfz": ["radheatflux"],
+        "bs": ["bs"],
+        "hz": ["hz"],
     }
 )
 
+#First is +Hdf5 indicator then the StagPy corresponding variable
 FIELD_FILES_H5: Mapping[str, List[str]] = MappingProxyType(
     {
         "Temperature": ["T"],
@@ -151,6 +158,8 @@ FIELD_FILES_H5: Mapping[str, List[str]] = MappingProxyType(
         "HeatFluxZ": ["hfz"],
         "HeatCap": ["cp"],
         "ThermalConductivity": ["tcond"],
+        "Basalt": ["bs"],
+        "Harzburgite": ["hz"],
 
     }
 )
@@ -181,6 +190,7 @@ SFIELD_FILES: Mapping[str, List[str]] = MappingProxyType(
         "hf": ["fbot", "ftop"],
         "hfs": ["fsbot", "fstop"],
         "cr": ["crust"],
+        "erp_h": ["erupt_hf"]
     }
 )
 
