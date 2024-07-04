@@ -321,14 +321,40 @@ def plot_scalar(step: Step,
         axis.add_patch(psurf)
         axis.add_patch(cmb)
 
+    # Define the mapping of 'var' to 'shading' values
+    shading_map = {
+        'T': 'gouraud',
+        'eta': 'gouraud',
+        'bs': None,
+        'hz': None,
+        # Add more mappings as needed
+        # 'another_var': 'another_shading',
+    }
+    # Get the shading value based on 'var'
+    # Set shading based on the value of var
+    shading_var = shading_map.get(var, 'gouraud')
+
+    # Define the mapping of 'var' to 'cmap' values
+    shading_map = {
+        'T': cm.batlow,
+        'eta': cm.batlow,
+        'bs': cm.bam,
+        'hz': cm.bam,
+        # Add more mappings as needed
+        # 'another_var': 'another_shading',
+    }
+    # Get the shading value based on 'var'
+    # Set shading based on the value of var
+    cmap_var = shading_map.get(var, cm.batlow)
+
     extra_opts = dict(
         #cmap=conf.field.cmap.get(var),
-        cmap = vik_map, 
+        cmap = cmap_var, 
         vmin=conf.plot.vmin,
         vmax=conf.plot.vmax,
         norm=mpl.colors.LogNorm() if var == "eta" else None,
         rasterized=conf.plot.raster,
-        shading='gouraud' if conf.field.interpolate else 'flat',
+        shading=shading_var,
     )
     extra_opts.update(extra)
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
@@ -676,9 +702,9 @@ def plot_scalar_tracers(step: Step,
     )
     extra_opts.update(extra)
     if(var == "Water conc." or  var   == "Carbon conc."):
-         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0 ,norm=matplotlib.colors.LogNorm(vmin=0.001, vmax=1000),cmap=cm.batlow,edgecolors=None, **extra_opts)
+         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0 ,alpha=0.5,norm=matplotlib.colors.LogNorm(vmin=0.001, vmax=1000),cmap=cm.batlow,edgecolors=None, **extra_opts)
     else: 
-         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0, cmap=cm.batlow,edgecolors=None, **extra_opts)
+         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,alpha=0.5,linewidths=0, cmap=cm.batlow,edgecolors=None, **extra_opts)
 
     
     if step.geom.spherical or conf.plot.ratio is None:
