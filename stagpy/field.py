@@ -338,8 +338,8 @@ def plot_scalar(step: Step,
     shading_map = {
         'T': cm.batlow,
         'eta': cm.batlow,
-        'bs': cm.bam,
-        'hz': cm.bam,
+        'bs': (cm.bam).reversed(),
+        'hz': (cm.bam).reversed(),
         # Add more mappings as needed
         # 'another_var': 'another_shading',
     }
