@@ -440,7 +440,7 @@ def plot_scalar(step: Step,
         else:
             #cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
             #cax2.text(0.5, 1.55, '{:.2f}'.format(print_time)+'\u2009Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
-            axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'\u2009Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'$\,$Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
     if cbar_remove == True:
@@ -773,7 +773,7 @@ def plot_scalar_tracers(step: Step,
         else:
             print('PRINT TIME', print_time)
             #cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
-            axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'\u2009Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'$\,$Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
     if cbar_remove == True:
