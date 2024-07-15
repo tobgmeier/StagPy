@@ -244,6 +244,7 @@ def plot_scalar(step: Step,
     paper_label = None,
     cbar_remove = False, 
     cbar_invisible = False,
+    invisible_alpha = 1.0,
     more_info=False,
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
@@ -419,15 +420,15 @@ def plot_scalar(step: Step,
         axis.add_artist(circle1)
     if print_substellar == True:
         cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color=text_color)
-        cax2.text(0.48, 0.4, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
-        cax2.text(0.52, 0.4, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
-        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold')
+        cax2.text(0.48, 0.5, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
+        cax2.text(0.52, 0.5, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
+        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold', alpha=invisible_alpha)
         #axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
-        axis.text(-radius-0.105*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
-        axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
+        axis.text(-radius-0.105*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold',alpha=invisible_alpha)
+        axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size-4,transform=axis.transAxes)
+        axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size-4,transform=axis.transAxes)
+        axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size-4,transform=axis.transAxes)
+        axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size-4,transform=axis.transAxes)
     if print_time != None:
         if paper_label != None:
             cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
@@ -438,7 +439,8 @@ def plot_scalar(step: Step,
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         else:
             #cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
-            cax2.text(0.5, 1.4, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            #cax2.text(0.5, 1.55, '{:.2f}'.format(print_time)+'\u2009Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'\u2009Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
     if cbar_remove == True:
@@ -645,6 +647,7 @@ def plot_scalar_tracers(step: Step,
     cbar_remove = False, 
     cbar_invisible = False,
     colorbar_label = None,
+    invisible_alpha=1.0,
     more_info=False,
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
@@ -751,14 +754,14 @@ def plot_scalar_tracers(step: Step,
         axis.add_artist(circle1)
     if print_substellar == True:
         cax2.axvline(x=0.5,ymin=0,ymax=1.0,linestyle='dashed',color=text_color)
-        cax2.text(0.48, 0.4, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
-        cax2.text(0.52, 0.4, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
-        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold')
-        axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold')
-        axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size,transform=axis.transAxes)
-        axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size,transform=axis.transAxes)
+        cax2.text(0.48, 0.5, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
+        cax2.text(0.52, 0.5, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
+        bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold',alpha=invisible_alpha)
+        axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold',alpha=invisible_alpha)
+        axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size-4,transform=axis.transAxes)
+        axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size-4,transform=axis.transAxes)
+        axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size-4,transform=axis.transAxes)
+        axis.text(0.5, rda, "-90$\degree$", ha="center", va="bottom", color=text_color,size=text_size-4,transform=axis.transAxes)
     if print_time != None:
         if paper_label != None:
             cax2.text(1.0, 0.4, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='right',verticalalignment='center',color=text_color, size = text_size)
@@ -769,7 +772,8 @@ def plot_scalar_tracers(step: Step,
         #axis.text(0,0,'{:.2e}'.format(print_time)+' Myrs',horizontalalignment='center')
         else:
             print('PRINT TIME', print_time)
-            cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            #cax2.text(0.5, 1.2, '{:.2f}'.format(print_time)+' Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
+            axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'\u2009Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
     if cbar_remove == True:
