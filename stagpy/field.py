@@ -29,6 +29,7 @@ from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 import matplotlib.colorbar
 import scipy.ndimage
 from scipy.ndimage.filters import gaussian_filter
+from matplotlib.colors import ListedColormap, Normalize
 
 import copy
 
@@ -246,6 +247,7 @@ def plot_scalar(step: Step,
     cbar_invisible = False,
     invisible_alpha = 1.0,
     more_info=False,
+    op_melt = False, 
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field.
@@ -305,6 +307,17 @@ def plot_scalar(step: Step,
 
     fld, unit = step.sdat.scale(fld, meta.dim)
 
+    if op_melt:
+        _, _, mf_fld, mf_meta = get_meshes_fld(
+            step, 'meltfrac', walls= not conf.field.interpolate
+        )
+        if conf.field.interpolate and step.geom.spherical and step.geom.twod_yz:
+            newline = (mf_fld[:1] + mf_fld[-1:]) / 2
+            mf_fld = np.concatenate((mf_fld, newline), axis=0)
+        mf_fld, mf_unit = step.sdat.scale(mf_fld, mf_meta.dim)
+
+
+
     if axis is None:
         fig, axis = plt.subplots(ncols=1)
     else:
@@ -341,6 +354,7 @@ def plot_scalar(step: Step,
         'eta': cm.batlow,
         'bs': (cm.bam).reversed(),
         'hz': (cm.bam).reversed(),
+        'meltfrac' : cm.lajolla,
         # Add more mappings as needed
         # 'another_var': 'another_shading',
     }
@@ -358,7 +372,36 @@ def plot_scalar(step: Step,
         shading=shading_var,
     )
     extra_opts.update(extra)
+
+
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
+
+    cbar_adjust = 1.05
+    if op_melt == True:
+        print(np.max(mf_fld), np.min(mf_fld))
+        # Create a mask where melt fraction is less than 0.1
+        mask = mf_fld < 0.1
+
+        fld_masked = np.ma.masked_where(mask, mf_fld)
+        # Set alpha to 0.0 where mask is True
+        cmap_var = cm.lajolla
+        cmap_with_alpha = cmap_var(np.arange(cmap_var.N))
+        cmap_with_alpha[:, -1] = np.where(np.arange(cmap_var.N) < 0.1 * cmap_var.N, 0, 1)  # Adjust alpha channel
+        custom_cmap = ListedColormap(cmap_with_alpha)
+        mf_extra_opts = dict(
+            #cmap=conf.field.cmap.get(var),
+            cmap = cmap_var, 
+            vmin=0,
+            vmax=1,
+            norm=None,
+            rasterized=conf.plot.raster,
+            shading=None,
+        )
+        print(np.max(fld_masked), np.min(fld_masked))
+        surf2 = axis.pcolormesh(xmesh, ymesh, fld_masked,**mf_extra_opts)
+        cbar_adjust = 1.05
+
+
 
     cbar = None
 
@@ -386,17 +429,28 @@ def plot_scalar(step: Step,
     #cax = divider.append_axes("right", size="5%", pad=+0.05)
     #cbar = plt.colorbar(surf, shrink=conf.field.shrinkcb,orientation="vertical", cax=cax)
     
+
+    cbar_ts = text_size
     cax = divider.append_axes("bottom", size="5%", pad=+0.05)    
     cbar = plt.colorbar(surf,orientation="horizontal",cax=cax)
     cbar.set_label(meta.description +
                (' pert.' if conf.field.perturbation else '') +
                (' ({})'.format(unit) if unit else '') +
-               (' (' + meta.dim + ')' if meta.dim != '1' else ' ( )'),color=text_color, size = text_size)
-    cbar.ax.tick_params(labelsize=text_size+1, color=text_color)
+               (' (' + meta.dim + ')' if meta.dim != '1' else ' ( )'),color=text_color, size = cbar_ts)
+    cbar.ax.tick_params(labelsize=cbar_ts+1, color=text_color)
     cbar.outline.set_edgecolor(text_color)
     #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
     cbar.ax.xaxis.set_tick_params(color=text_color)
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
+
+    if op_melt:
+        # Add the second colorbar for the masked data
+        cax3 = divider.append_axes("right", size="5%", pad=0.05)  # Increase the pad to place it below the first colorbar
+        cbar3 = plt.colorbar(surf2, cax=cax3, orientation="vertical")
+        cbar3.set_label('Melt Fraction', size=cbar_ts)
+        cbar3.ax.tick_params(labelsize=text_size-2, color=text_color)
+        cbar3.ax.xaxis.set_tick_params(color=text_color)
+        plt.setp(plt.getp(cbar3.ax.axes, 'xticklabels'), color=text_color)
 
 
     cax2 = divider.append_axes("top", size="6%", pad=+0.0)
@@ -454,6 +508,7 @@ def plot_scalar(step: Step,
         cax4.set_yticks([])
         #cax4.axis('off')
 
+    fig.set_size_inches(fig.get_size_inches()[0]*cbar_adjust, fig.get_size_inches()[1]*cbar_adjust)  # Increase the height of the figure
     return fig, axis, surf, cbar
 
 
