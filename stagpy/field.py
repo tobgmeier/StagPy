@@ -354,7 +354,7 @@ def plot_scalar(step: Step,
         'eta': cm.batlow,
         'bs': (cm.bam).reversed(),
         'hz': (cm.bam).reversed(),
-        'meltfrac' : cm.lajolla,
+        'meltfrac' : cm.managua.reversed(),
         # Add more mappings as needed
         # 'another_var': 'another_shading',
     }
@@ -378,15 +378,15 @@ def plot_scalar(step: Step,
 
     cbar_adjust = 1.05
     if op_melt == True:
-        print(np.max(mf_fld), np.min(mf_fld))
+        low_melt = 0.01
         # Create a mask where melt fraction is less than 0.1
-        mask = mf_fld < 0.1
+        mask = mf_fld < low_melt
 
         fld_masked = np.ma.masked_where(mask, mf_fld)
         # Set alpha to 0.0 where mask is True
-        cmap_var = cm.lajolla
+        cmap_var = cm.managua.reversed()
         cmap_with_alpha = cmap_var(np.arange(cmap_var.N))
-        cmap_with_alpha[:, -1] = np.where(np.arange(cmap_var.N) < 0.1 * cmap_var.N, 0, 1)  # Adjust alpha channel
+        cmap_with_alpha[:, -1] = np.where(np.arange(cmap_var.N) < low_melt * cmap_var.N, 0, 1)  # Adjust alpha channel
         custom_cmap = ListedColormap(cmap_with_alpha)
         mf_extra_opts = dict(
             #cmap=conf.field.cmap.get(var),
@@ -395,7 +395,7 @@ def plot_scalar(step: Step,
             vmax=1,
             norm=None,
             rasterized=conf.plot.raster,
-            shading=None,
+            shading='gouraud',
         )
         print(np.max(fld_masked), np.min(fld_masked))
         surf2 = axis.pcolormesh(xmesh, ymesh, fld_masked,**mf_extra_opts)
@@ -447,10 +447,12 @@ def plot_scalar(step: Step,
         # Add the second colorbar for the masked data
         cax3 = divider.append_axes("right", size="5%", pad=0.05)  # Increase the pad to place it below the first colorbar
         cbar3 = plt.colorbar(surf2, cax=cax3, orientation="vertical")
-        cbar3.set_label('Melt Fraction', size=cbar_ts)
+        cbar3.set_label('Melt Fraction', size=cbar_ts,color=text_color)
         cbar3.ax.tick_params(labelsize=text_size-2, color=text_color)
-        cbar3.ax.xaxis.set_tick_params(color=text_color)
-        plt.setp(plt.getp(cbar3.ax.axes, 'xticklabels'), color=text_color)
+        #cbar3.ax.xaxis.set_tick_params(color=text_color)
+        cbar3.ax.yaxis.set_tick_params(color=text_color)
+        cbar3.outline.set_edgecolor(text_color)
+        plt.setp(plt.getp(cbar3.ax.axes, 'yticklabels'), color=text_color)
 
 
     cax2 = divider.append_axes("top", size="6%", pad=+0.0)
