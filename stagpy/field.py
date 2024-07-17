@@ -404,6 +404,8 @@ def plot_scalar(step: Step,
 
 
     cbar = None
+    cbar3 = None
+    cax3 = None
 
     conf.field.colorbar=False
     if conf.field.colorbar: #TGM: turned this off by default as it is plotted below (for now), edit July23: try merge this
@@ -502,6 +504,8 @@ def plot_scalar(step: Step,
     if cbar_remove == True:
         cbar.remove()
         cax.axis('off')
+        cbar3.remove()
+        cax3.axis('off')
     if cbar_invisible == True:
         cbar.remove()
         cax4 = divider.append_axes("bottom", size="5%", pad=+0.05,frameon=False)
