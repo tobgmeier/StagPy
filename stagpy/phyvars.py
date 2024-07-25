@@ -153,7 +153,7 @@ FIELD_FILES_H5: Mapping[str, List[str]] = MappingProxyType(
         "fFeO": ["fFeO"],
         "fXO": ["fXO"],
         "fFeR": ["fFeR"],
-        "Plastic_Fraction": ["pf"],
+        "Rheo-PlasticFraction": ["pf"],
         "Expan_Coeff": ["ex"],
         "HeatFluxZ": ["hfz"],
         "HeatCap": ["cp"],
