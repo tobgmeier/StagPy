@@ -243,11 +243,11 @@ def plot_scalar(step: Step,
     draw_circle = False, 
     text_size = 9 ,
     paper_label = None,
-    cbar_remove = False, 
-    cbar_invisible = False,
     invisible_alpha = 1.0,
     more_info=False,
     op_melt = False, 
+    xcbar = 1, 
+    ycbar = 1, 
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field.
@@ -376,6 +376,12 @@ def plot_scalar(step: Step,
 
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
 
+    #parameters to remove colorbar
+    if xcbar == -1:
+        xcbar = None
+    if ycbar == -1: 
+        ycbar = None
+
     cbar_adjust = 1.05
     if op_melt == True:
         low_melt = 0.01
@@ -445,10 +451,12 @@ def plot_scalar(step: Step,
     cbar.ax.xaxis.set_tick_params(color=text_color)
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
 
+
+
     if op_melt:
         # Add the second colorbar for the masked data
         cax3 = divider.append_axes("right", size="5%", pad=0.05)  # Increase the pad to place it below the first colorbar
-        cbar3 = plt.colorbar(surf2, cax=cax3, orientation="vertical")
+        cbar3 = plt.colorbar(surf2, cax=cax3, orientation="vertical", alpha=ycbar)
         cbar3.set_label('Melt Fraction', size=cbar_ts,color=text_color)
         cbar3.ax.tick_params(labelsize=text_size-2, color=text_color)
         #cbar3.ax.xaxis.set_tick_params(color=text_color)
@@ -501,18 +509,29 @@ def plot_scalar(step: Step,
             axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'$\,$Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
-    if cbar_remove == True:
+
+    #Invisibility/removal of colorbars
+    if xcbar == None: 
         cbar.remove()
         cax.axis('off')
+    if ycbar == None:
         cbar3.remove()
         cax3.axis('off')
-    if cbar_invisible == True:
+    if ycbar==0:
+        cbar3.remove()
+        cax_invy = divider.append_axes("right", size="5%", pad=0.05, frameon=False)
+        cax_invy.set_ylabel('Melt Fraction', size=cbar_ts,color=text_color, alpha=0)
+        cax_invy.set_xticks([])
+        cax_invy.set_yticks([])
+    if xcbar==0:
         cbar.remove()
         cax4 = divider.append_axes("bottom", size="5%", pad=+0.05,frameon=False)
-        cax4.set_xlabel('Temperature',alpha=0)
+        cax4.set_xlabel(meta.description +
+               (' pert.' if conf.field.perturbation else '') +
+               (' ({})'.format(unit) if unit else '') +
+               (' (' + meta.dim + ')' if meta.dim != '1' else ' ( )'),color=text_color, size = cbar_ts, alpha = 0)
         cax4.set_xticks([])
         cax4.set_yticks([])
-        #cax4.axis('off')
 
     fig.set_size_inches(fig.get_size_inches()[0]*cbar_adjust, fig.get_size_inches()[1]*cbar_adjust)  # Increase the height of the figure
     return fig, axis, surf, cbar
@@ -705,11 +724,11 @@ def plot_scalar_tracers(step: Step,
     draw_circle = False, 
     text_size = 9 ,
     paper_label = None,
-    cbar_remove = False, 
-    cbar_invisible = False,
     colorbar_label = None,
     invisible_alpha=1.0,
     more_info=False,
+    xcbar = 1, 
+    ycbar = 1, 
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field for tracers (technically a coloured scatter plot).
@@ -837,16 +856,19 @@ def plot_scalar_tracers(step: Step,
             axis.text(0.5, 0.5, '{:.2f}'.format(print_time)+'$\,$Gyr',horizontalalignment='center',verticalalignment='center',color=text_color, size = text_size)
         #axis.text(0.5,0.5,'$\eta_0=$'+'$10^{%s}$ Pa s' %(eta0)+'\n $T_{CMB}=%s$K \n $T_{day}=%s$K \n $T_{night}=%s$K' %(Tcmb, Tday, Tnight),horizontalalignment='center',verticalalignment='center',size = text_size,transform = axis.transAxes)
 
-    if cbar_remove == True:
+    #Invisibility/removal of colorbars
+    if xcbar == None: 
         cbar.remove()
         cax.axis('off')
-    if cbar_invisible == True:
+    if xcbar==0:
         cbar.remove()
         cax4 = divider.append_axes("bottom", size="5%", pad=+0.05,frameon=False)
-        cax4.set_xlabel('Temperature',alpha=0)
+        cax4.set_xlabel(meta.description +
+               (' pert.' if conf.field.perturbation else '') +
+               (' ({})'.format(unit) if unit else '') +
+               (' (' + meta.dim + ')' if meta.dim != '1' else ' ( )'),color=text_color, size = cbar_ts, alpha = 0)
         cax4.set_xticks([])
         cax4.set_yticks([])
-        #cax4.axis('off')
 
     return fig, axis, surf, cbar
 
