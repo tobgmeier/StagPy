@@ -248,6 +248,7 @@ def plot_scalar(step: Step,
     op_melt = False, 
     xcbar = 1, 
     ycbar = 1, 
+    mantle_only = False,
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field.
@@ -532,6 +533,21 @@ def plot_scalar(step: Step,
                (' (' + meta.dim + ')' if meta.dim != '1' else ' ( )'),color=text_color, size = cbar_ts, alpha = 0)
         cax4.set_xticks([])
         cax4.set_yticks([])
+
+    #Plot mantle only
+    if mantle_only:
+        for ax in fig.axes:
+            for text in ax.texts:
+                text.set_alpha(0.0)
+                bbox = text.get_bbox_patch()  # Get the bbox of the text
+                if bbox is not None:
+                    bbox.set_alpha(0.0)  # Set bbox opacity
+
+            for line in ax.lines: 
+                    line.set_alpha(0.0)
+            ax.patch.set_alpha(0.0)
+            ax.patch.set_facecolor('none')  # Set each axes background to transparent
+
 
     fig.set_size_inches(fig.get_size_inches()[0]*cbar_adjust, fig.get_size_inches()[1]*cbar_adjust)  # Increase the height of the figure
     return fig, axis, surf, cbar
