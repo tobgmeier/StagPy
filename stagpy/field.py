@@ -515,9 +515,13 @@ def plot_scalar(step: Step,
     if xcbar == None: 
         cbar.remove()
         cax.axis('off')
+
     if ycbar == None:
-        cbar3.remove()
-        cax3.axis('off')
+        if cbar3 is not None:
+            cbar3.remove()
+        if cax3 is not None:
+            cax3.axis('off')
+
     if ycbar==0:
         cbar3.remove()
         cax_invy = divider.append_axes("right", size="5%", pad=0.05, frameon=False)
