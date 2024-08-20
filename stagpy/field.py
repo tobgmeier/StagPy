@@ -355,7 +355,8 @@ def plot_scalar(step: Step,
         'eta': cm.batlow,
         'bs': (cm.bam).reversed(),
         'hz': (cm.bam).reversed(),
-        'meltfrac' : cm.managua.reversed(),
+        #'meltfrac' : cm.managua.reversed(),
+        'meltfrac' : cm.berlin,
         # Add more mappings as needed
         # 'another_var': 'another_shading',
     }
@@ -391,7 +392,8 @@ def plot_scalar(step: Step,
 
         fld_masked = np.ma.masked_where(mask, mf_fld)
         # Set alpha to 0.0 where mask is True
-        cmap_var = cm.managua.reversed()
+        #cmap_var = cm.managua.reversed()
+        cmap_var = cm.berlin
         cmap_with_alpha = cmap_var(np.arange(cmap_var.N))
         cmap_with_alpha[:, -1] = np.where(np.arange(cmap_var.N) < low_melt * cmap_var.N, 0, 1)  # Adjust alpha channel
         custom_cmap = ListedColormap(cmap_with_alpha)
