@@ -357,7 +357,7 @@ def plot_scalar(step: Step,
         'hz': (cm.bam).reversed(),
         #'meltfrac' : cm.managua.reversed(),
         'meltfrac' : cm.berlin,
-        'meltcompo' : cm.bam,
+        'meltcompo' : (cm.bam).reversed(),
         # Add more mappings as needed
         # 'another_var': 'another_shading',
     }
