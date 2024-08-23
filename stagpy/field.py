@@ -30,6 +30,7 @@ import matplotlib.colorbar
 import scipy.ndimage
 from scipy.ndimage.filters import gaussian_filter
 from matplotlib.colors import ListedColormap, Normalize
+from scipy.spatial import cKDTree
 
 import copy
 
@@ -739,6 +740,33 @@ def get_sfield_pp(step):
 
     return sfld
 
+def average_tracer_field(xmesh, ymesh,x_pos, y_pos, field_tracer):
+    """
+    Averages the tracer field on the given mesh, which then can be used for a pcolormesh plot
+    """
+    # Flatten xmesh and ymesh for easier processing
+    xmesh_flat = xmesh.flatten()
+    ymesh_flat = ymesh.flatten()
+
+    # Create a KDTree for efficient spatial queries
+    tree = cKDTree(np.vstack([xmesh_flat, ymesh_flat]).T)
+
+    # Query the KDTree to find which grid cell each tracer belongs to
+    _, indices = tree.query(np.vstack([x_pos, y_pos]).T)
+
+    # Calculate the average tracer value in each grid cell
+    unique_indices, counts = np.unique(indices, return_counts=True)
+    average_tracer_values = np.zeros_like(xmesh_flat)
+
+    # Sum tracer values and counts
+    for idx in unique_indices:
+        average_tracer_values[idx] = np.sum(field_tracer[indices == idx]) / counts[unique_indices == idx]
+
+    # Reshape back to grid form
+    average_tracer_grid = average_tracer_values.reshape(xmesh.shape)
+
+    return average_tracer_grid
+
 def plot_scalar_tracers(step: Step,
     var: str,
     axis: Optional[Axes] = None,
@@ -752,6 +780,8 @@ def plot_scalar_tracers(step: Step,
     more_info=False,
     xcbar = 1, 
     ycbar = 1, 
+    mantle_only = False, 
+    average_tracers = False, 
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field for tracers (technically a coloured scatter plot).
@@ -777,6 +807,8 @@ def plot_scalar_tracers(step: Step,
     x_pos = step.tracers['x'][0][::] #TGM: could change ::2 to some variable depending on how many tracers we want to plot
     y_pos = step.tracers['y'][0][::]
     field_tracer = step.tracers[var][0][::]
+    if var == "TimeMelted":
+        field_tracer = field_tracer/(3600*24*365.25)/1.0e6
     print('MINMAX TRACER', np.min(field_tracer), np.max(field_tracer))
 
     xmin, xmax = x_pos.min(), x_pos.max()
@@ -806,12 +838,28 @@ def plot_scalar_tracers(step: Step,
         vmax=conf.plot.vmax,
     )
     extra_opts.update(extra)
-    if(var == "Water conc." or  var   == "Carbon conc."):
-         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0 ,alpha=0.5,norm=matplotlib.colors.LogNorm(vmin=0.001, vmax=1000),cmap=cm.batlow,edgecolors=None, **extra_opts)
-    else: 
-         surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,alpha=0.5,linewidths=0, cmap=cm.batlow,edgecolors=None, **extra_opts)
 
-    
+    if average_tracers == False:
+
+        if(var == "Water conc." or  var   == "Carbon conc."):
+             surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,linewidths=0 ,alpha=0.5,norm=matplotlib.colors.LogNorm(vmin=0.001, vmax=1000),cmap=cm.batlow,edgecolors=None, **extra_opts)
+        else: 
+             surf = axis.scatter(x_pos, y_pos, c=field_tracer,s=0.4,alpha=0.5,linewidths=0, cmap=cm.batlow,edgecolors=None, **extra_opts)
+    if average_tracers == True:
+        xmesh, ymesh, _, _ = get_meshes_fld(
+            step, 'T', walls= not conf.field.interpolate
+        ) #'T' is arbitrary here, but assuming this is always available as we need a scalar field to get the xmesh/ymesh
+        if conf.field.interpolate and step.geom.spherical and step.geom.twod_yz:
+            # add one point to close spherical annulus
+            xmesh = np.concatenate((xmesh, xmesh[:1]), axis=0)
+            ymesh = np.concatenate((ymesh, ymesh[:1]), axis=0)
+        average_field_tracer = average_tracer_field(xmesh, ymesh,x_pos, y_pos,field_tracer)
+        if(var == "Water conc." or  var   == "Carbon conc."):
+            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, norm = matplotlib.colors.LogNorm(vmin=0.001, vmax=1000), **extra_opts)
+        else: 
+            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, **extra_opts)
+
+
     if step.geom.spherical or conf.plot.ratio is None:
         axis.set_aspect("equal")
         axis.set_axis_off()
@@ -860,7 +908,7 @@ def plot_scalar_tracers(step: Step,
         cax2.text(0.48, 0.5, 'Day', horizontalalignment='right', verticalalignment='center',color=text_color, size = text_size,transform=cax2.transAxes)
         cax2.text(0.52, 0.5, 'Night', horizontalalignment='left', verticalalignment='center',color=text_color, size = text_size, transform=cax2.transAxes)
         bbox_props = dict(boxstyle="rarrow", ec="black", lw=0.5,fc='gold',alpha=invisible_alpha)
-        axis.text(-radius-0.068*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold',alpha=invisible_alpha)
+        axis.text(-radius-0.105*radius, 0.0, "STAR", ha="right", va="center",bbox=bbox_props,size = text_size, color='black',fontweight='bold',alpha=invisible_alpha)
         axis.text(rda , 0.5, "0$\degree$", ha="left", va="center", color=text_color,size=text_size-4,transform=axis.transAxes)
         axis.text(1-rda+0.005, 0.5, "180$\degree$", ha="right", va="center", color=text_color,size=text_size-4,transform=axis.transAxes)
         axis.text(0.5 , 1-rda, "90$\degree$", ha="center", va="top", color=text_color,size=text_size-4,transform=axis.transAxes)
@@ -894,5 +942,9 @@ def plot_scalar_tracers(step: Step,
         cax4.set_yticks([])
 
     return fig, axis, surf, cbar
+
+
+
+
 
 
