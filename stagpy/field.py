@@ -864,7 +864,10 @@ def plot_scalar_tracers(step: Step,
         if(var == "Water conc." or  var   == "Carbon conc."):
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, norm = matplotlib.colors.LogNorm(vmin=0.001, vmax=1000), **extra_opts)
         else: 
-            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,cmap=cm.batlow, shading=None, **extra_opts)
+            print(print_time)
+            boundaries = [0, 1000, 2000, 3000, 4000, 5000, print_time*1000]  #time intervals
+            norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
+            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,norm=norm_boundaries, cmap=cm.batlow, shading=None, **extra_opts)
 
 
     if step.geom.spherical or conf.plot.ratio is None:
