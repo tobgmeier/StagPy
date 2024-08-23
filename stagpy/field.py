@@ -854,10 +854,17 @@ def plot_scalar_tracers(step: Step,
             xmesh = np.concatenate((xmesh, xmesh[:1]), axis=0)
             ymesh = np.concatenate((ymesh, ymesh[:1]), axis=0)
         average_field_tracer = average_tracer_field(xmesh, ymesh,x_pos, y_pos,field_tracer)
+        if average_field_tracer.shape[0] > max(step.geom.nxtot, step.geom.nytot):
+            average_field_tracer = (average_field_tracer[:-1] + average_field_tracer[1:]) / 2
+        if conf.field.interpolate and step.geom.spherical and step.geom.twod_yz:
+            # add one point to close spherical annulus
+            newline = (average_field_tracer[:1] +  average_field_tracer[-1:]) / 2
+            average_field_tracer = np.concatenate(( average_field_tracer, newline), axis=0)
+
         if(var == "Water conc." or  var   == "Carbon conc."):
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, norm = matplotlib.colors.LogNorm(vmin=0.001, vmax=1000), **extra_opts)
         else: 
-            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, **extra_opts)
+            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,cmap=cm.batlow, shading='gouraud', **extra_opts)
 
 
     if step.geom.spherical or conf.plot.ratio is None:
