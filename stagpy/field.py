@@ -31,6 +31,7 @@ import scipy.ndimage
 from scipy.ndimage.filters import gaussian_filter
 from matplotlib.colors import ListedColormap, Normalize
 from scipy.spatial import cKDTree
+from matplotlib.ticker import FuncFormatter
 
 import copy
 
@@ -864,14 +865,11 @@ def plot_scalar_tracers(step: Step,
         if(var == "Water conc." or  var   == "Carbon conc."):
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, norm = matplotlib.colors.LogNorm(vmin=0.001, vmax=1000), **extra_opts)
         else: 
-            print(print_time)
             boundaries = [0, 1, 2, 3, 4, 5, print_time]  #time intervals
             # Optionally set the labels for those ticks
             norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,norm=norm_boundaries, cmap=cm.batlow, shading=None, **extra_opts)
             # Use FuncFormatter to format the ticks to one decimal place
-            cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.1f} Gyrs'))
-
 
     if step.geom.spherical or conf.plot.ratio is None:
         axis.set_aspect("equal")
@@ -895,6 +893,10 @@ def plot_scalar_tracers(step: Step,
     #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
     cbar.ax.xaxis.set_tick_params(color=text_color)
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
+
+    if var == 'TimeMelted':
+        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.1f} Gyrs'))
+
 
 
     cax2 = divider.append_axes("top", size="6%", pad=+0.0)
