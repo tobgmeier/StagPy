@@ -866,8 +866,11 @@ def plot_scalar_tracers(step: Step,
         else: 
             print(print_time)
             boundaries = [0, 1, 2, 3, 4, 5, print_time]  #time intervals
+            # Optionally set the labels for those ticks
             norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,norm=norm_boundaries, cmap=cm.batlow, shading=None, **extra_opts)
+            # Use FuncFormatter to format the ticks to one decimal place
+            cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.1f} Gyrs'))
 
 
     if step.geom.spherical or conf.plot.ratio is None:
