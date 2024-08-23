@@ -808,7 +808,7 @@ def plot_scalar_tracers(step: Step,
     y_pos = step.tracers['y'][0][::]
     field_tracer = step.tracers[var][0][::]
     if var == "TimeMelted":
-        field_tracer = field_tracer/(3600*24*365.25)/1.0e6
+        field_tracer = field_tracer/(3600*24*365.25)/1.0e9
     print('MINMAX TRACER', np.min(field_tracer), np.max(field_tracer))
 
     xmin, xmax = x_pos.min(), x_pos.max()
@@ -865,7 +865,7 @@ def plot_scalar_tracers(step: Step,
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, norm = matplotlib.colors.LogNorm(vmin=0.001, vmax=1000), **extra_opts)
         else: 
             print(print_time)
-            boundaries = [0, 1000, 2000, 3000, 4000, 5000, print_time*1000]  #time intervals
+            boundaries = [0, 1, 2, 3, 4, 5, print_time]  #time intervals
             norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,norm=norm_boundaries, cmap=cm.batlow, shading=None, **extra_opts)
 
