@@ -880,11 +880,13 @@ def plot_scalar_tracers(step: Step,
             if len(boundaries) > 1:
                 extra_boundary = (boundaries[0] + boundaries[1]) / 2
                 boundaries.insert(1, extra_boundary)
+                extra_boundary = (boundaries[0] + boundaries[1]) / 2
+                boundaries.insert(1, extra_boundary)
 
             # Always include print_time as the upper boundary
             if print_time > max(boundaries):
                 boundaries.append(print_time)
-                
+
             print('boundaries', boundaries)
             # Optionally set the labels for those ticks
             norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
@@ -915,7 +917,8 @@ def plot_scalar_tracers(step: Step,
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
 
     if var == 'TimeMelted':
-        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.1f}'))
+        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.2f}'))
+        cbar.ax.tick_params(labelsize=12) 
 
 
 
