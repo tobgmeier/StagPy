@@ -909,7 +909,7 @@ def plot_scalar_tracers(step: Step,
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
 
     if var == 'TimeMelted':
-        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.1f} Gyrs'))
+        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.1f}'))
 
 
 
