@@ -809,7 +809,7 @@ def plot_scalar_tracers(step: Step,
     y_pos = step.tracers['y'][0][::]
     field_tracer = step.tracers[var][0][::]
     if var == "TimeMelted":
-        field_tracer = field_tracer/(3600*24*365.25)/1.0e9
+        field_tracer = print_time - field_tracer/(3600*24*365.25)/1.0e9
     print('MINMAX TRACER', np.min(field_tracer), np.max(field_tracer))
 
     xmin, xmax = x_pos.min(), x_pos.max()
@@ -882,7 +882,7 @@ def plot_scalar_tracers(step: Step,
             print('boundaries', boundaries)
             # Optionally set the labels for those ticks
             norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
-            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,norm=norm_boundaries, cmap=cm.batlow, shading=None, **extra_opts)
+            surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,norm=norm_boundaries, cmap=cm.batlow.reversed(), shading=None, **extra_opts)
             # Use FuncFormatter to format the ticks to one decimal place
 
     if step.geom.spherical or conf.plot.ratio is None:
