@@ -876,9 +876,15 @@ def plot_scalar_tracers(step: Step,
                 #Wider intervals for larger maximum times
                 boundaries = np.arange(0, print_time + 1, 1).tolist()  # Example: [0, 1, 2, ..., print_time]
 
+            # Add an extra boundary at the beginning, which is the average of the first two items
+            if len(boundaries) > 1:
+                extra_boundary = (boundaries[0] + boundaries[1]) / 2
+                boundaries.insert(1, extra_boundary)
+
             # Always include print_time as the upper boundary
             if print_time > max(boundaries):
                 boundaries.append(print_time)
+                
             print('boundaries', boundaries)
             # Optionally set the labels for those ticks
             norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
