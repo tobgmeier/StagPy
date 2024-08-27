@@ -864,8 +864,22 @@ def plot_scalar_tracers(step: Step,
 
         if(var == "Water conc." or  var   == "Carbon conc."):
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer, norm = matplotlib.colors.LogNorm(vmin=0.001, vmax=1000), **extra_opts)
-        else: 
-            boundaries = [0, 1, 2, 3, 4, 5, print_time]  #time intervals
+        else:
+            #Determine boundaries based on print_time
+            if print_time <= 0.5:
+                # Use finer intervals for smaller maximum times
+                boundaries = np.linspace(0, 0.5, 6).tolist()  # Example: [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+            elif print_time <= 5:
+                #Regular intervals for medium time ranges
+                boundaries = np.arange(0, 6, 1).tolist()  # Example: [0, 1, 2, 3, 4, 5]
+            else:
+                #Wider intervals for larger maximum times
+                boundaries = np.arange(0, print_time + 1, 1).tolist()  # Example: [0, 1, 2, ..., print_time]
+
+            # Always include print_time as the upper boundary
+            if print_time > max(boundaries):
+                boundaries.append(print_time)
+            print('boundaries', boundaries)
             # Optionally set the labels for those ticks
             norm_boundaries = matplotlib.colors.BoundaryNorm(boundaries, ncolors=256, clip=True)
             surf = axis.pcolormesh(xmesh, ymesh, average_field_tracer,norm=norm_boundaries, cmap=cm.batlow, shading=None, **extra_opts)
