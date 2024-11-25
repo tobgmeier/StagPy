@@ -332,9 +332,9 @@ TIME: Mapping[str, Vart] = MappingProxyType(
         "r_ic": Vart("Inner core radius", "Inner core radius", "m"),
         "topT_val": Vart("Temperature at top", "Temperature", "K"),
         "botT_val": Vart("Temperature at bottom", "Temperature", "K"),
-        "H2O_mean": Vart("H2O concentration", "concentration", "1"),
-        "CO2_mean": Vart("CO2 concentration", "concentration", "1"),
-        "N2_mean": Vart("N2 concentration", "concentration", "1"),
+        "h2o_mean": Vart("H2O concentration", "concentration", "1"),
+        "co2_mean": Vart("CO2 concentration", "concentration", "1"),
+        "n2_mean": Vart("N2 concentration", "concentration", "1"),
     }
 )
 
