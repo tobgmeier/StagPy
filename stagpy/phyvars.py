@@ -301,6 +301,7 @@ RPROF_EXTRA: Mapping[str, Callable[[Step], Rprof]] = MappingProxyType(
 
 
 TIME: Mapping[str, Vart] = MappingProxyType(
+    #order needs to be the same as in time series file!
     {
         "t": Vart("Time", "Time", "s"),
         "ftop": Vart("Heat flux at top", "Heat flux", "W/m2"),
@@ -331,8 +332,9 @@ TIME: Mapping[str, Vart] = MappingProxyType(
         "r_ic": Vart("Inner core radius", "Inner core radius", "m"),
         "topT_val": Vart("Temperature at top", "Temperature", "K"),
         "botT_val": Vart("Temperature at bottom", "Temperature", "K"),
-        "co2_mean": Vart("CO2 concentration", "concentration", "1"),
-        "h2o_mean": Vart("H2O concentration", "concentration", "1"),
+        "H2O_mean": Vart("H2O concentration", "concentration", "1"),
+        "CO2_mean": Vart("CO2 concentration", "concentration", "1"),
+        "N2_mean": Vart("N2 concentration", "concentration", "1"),
     }
 )
 
