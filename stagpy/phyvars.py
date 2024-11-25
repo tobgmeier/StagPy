@@ -332,6 +332,7 @@ TIME: Mapping[str, Vart] = MappingProxyType(
         "topT_val": Vart("Temperature at top", "Temperature", "K"),
         "botT_val": Vart("Temperature at bottom", "Temperature", "K"),
         "co2_mean": Vart("CO2 concentration", "concentration", "1"),
+        "h2o_mean": Vart("H2O concentration", "concentration", "1"),
     }
 )
 
