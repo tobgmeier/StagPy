@@ -251,6 +251,7 @@ def plot_scalar(step: Step,
     xcbar = 1, 
     ycbar = 1, 
     mantle_only = False,
+    colorbar_label = None,
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field.
@@ -456,6 +457,7 @@ def plot_scalar(step: Step,
     #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
     cbar.ax.xaxis.set_tick_params(color=text_color)
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
+    cbar.set_label(colorbar_label,color=text_color, size = text_size)
 
 
 
