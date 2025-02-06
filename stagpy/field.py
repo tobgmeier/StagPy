@@ -366,6 +366,7 @@ def plot_scalar(step: Step,
         #'meltfrac' : cm.managua.reversed(),
         'meltfrac' : cm.berlin,
         'meltcompo' : (cm.bam).reversed(),
+        'v1': cm.roma
         # Add more mappings as needed
         # 'another_var': 'another_shading',
     }
