@@ -252,6 +252,7 @@ def plot_scalar(step: Step,
     ycbar = 1, 
     mantle_only = False,
     colorbar_label = None,
+    mask_f = False,
     text_color = 'black', **extra:Any,)-> Tuple[Figure, Axes, QuadMesh, Colorbar]:
 
     """Plot scalar field.
@@ -280,6 +281,7 @@ def plot_scalar(step: Step,
 
     if step.geom.threed and step.geom.spherical:
         raise NotAvailableError("plot_scalar not implemented for 3D spherical geometry")
+
 
     xmesh, ymesh, fld, meta = get_meshes_fld(
         step, var, walls= not conf.field.interpolate
@@ -311,16 +313,19 @@ def plot_scalar(step: Step,
 
     fld, unit = step.sdat.scale(fld, meta.dim)
 
-    if op_melt:
-        _, _, mf_fld, mf_meta = get_meshes_fld(
+    if op_melt or mask_f: #if masking wrt melt field, need to get the centered mesh (not walls)
+        xmesh_cent, ymesh_cent, mf_fld, mf_meta = get_meshes_fld(
             step, 'meltfrac', walls= not conf.field.interpolate
         )
         if conf.field.interpolate and step.geom.spherical and step.geom.twod_yz:
             newline = (mf_fld[:1] + mf_fld[-1:]) / 2
             mf_fld = np.concatenate((mf_fld, newline), axis=0)
+            xmesh_cent = np.concatenate((xmesh_cent, xmesh_cent[:1]), axis=0)
+            ymesh_cent = np.concatenate((ymesh_cent, ymesh_cent[:1]), axis=0)
         mf_fld, mf_unit = step.sdat.scale(mf_fld, mf_meta.dim)
 
-
+    if mask_f:
+        xmesh,ymesh = xmesh_cent, ymesh_cent 
 
     if axis is None:
         fig, axis = plt.subplots(ncols=1)
@@ -353,7 +358,7 @@ def plot_scalar(step: Step,
     shading_var = shading_map.get(var, 'gouraud')
 
     # Define the mapping of 'var' to 'cmap' values
-    shading_map = {
+    cmap_map = {
         'T': cm.batlow,
         'eta': cm.batlow,
         'bs': (cm.bam).reversed(),
@@ -366,7 +371,16 @@ def plot_scalar(step: Step,
     }
     # Get the shading value based on 'var'
     # Set shading based on the value of var
-    cmap_var = shading_map.get(var, cm.batlow)
+    cmap_var = cmap_map.get(var, cm.batlow)
+    
+    if mask_f == True:
+        vphi_cent = 0.5 * (fld[:-1, :] + fld[1:, :]) #interpolate staggered field
+        fld = np.where(mf_fld < 0.1, vphi_cent, np.nan)
+        mask = np.isnan(fld)  # Mask NaN values
+        fld = np.ma.masked_where(mask, fld)  # Create masked array
+        cmap_var.set_bad(color='black')  # Ensure NaNs appear as black
+        shading_var = 'nearest'
+
 
     extra_opts = dict(
         #cmap=conf.field.cmap.get(var),
@@ -378,7 +392,6 @@ def plot_scalar(step: Step,
         shading=shading_var,
     )
     extra_opts.update(extra)
-
 
     surf = axis.pcolormesh(xmesh, ymesh, fld, **extra_opts)
 
