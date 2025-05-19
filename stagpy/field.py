@@ -350,6 +350,7 @@ def plot_scalar(step: Step,
         'eta': 'gouraud',
         'bs': None,
         'hz': None,
+        'v1': None,
         # Add more mappings as needed
         # 'another_var': 'another_shading',
     }
