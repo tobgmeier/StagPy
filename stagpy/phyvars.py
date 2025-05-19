@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
     from .datatypes import Field, Rprof, Tseries
     from .stagyydata import StagyyData, _Scales
 
-#First is string used for StagPy, then what i means. 
+#First is string used for StagPy, then what it means. 
 FIELD: Mapping[str, Varf] = MappingProxyType(
     {
         "T": Varf("Temperature", "K"),
@@ -178,6 +178,7 @@ SFIELD: Mapping[str, Varf] = MappingProxyType(
         "fsbot": Varf("Heat flux from spectrum at bottom", "W/m2"),
         "crust": Varf("Crustal thickness", "m"),
         "erupt": Varf("Eruption rate", "1/s"),
+        "intrude": Varf("Intrusion rate", "1/s"),
         "erupt_hf": Varf("Eruption rate", "W/m2"),
     }
 )
@@ -208,6 +209,7 @@ SFIELD_FILES_H5: Mapping[str, List[str]] = MappingProxyType(
         "TopHFSpectrum": ["fstop"],
         "CrustThickness": ["crust"],
         "Erupted": ["erupt"],
+        "Intruded": ["intrude"],
         "EruptionHeatflux": ["erupt_hf"],
     }
 )
