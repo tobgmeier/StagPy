@@ -466,13 +466,14 @@ def plot_scalar(step: Step,
     cbar.set_label(meta.description +
                (' pert.' if conf.field.perturbation else '') +
                (' ({})'.format(unit) if unit else '') +
-               (' (' + meta.dim + ')' if meta.dim != '1' else ' ( )'),color=text_color, size = cbar_ts)
+               (' (' + meta.dim + ')' if meta.dim != '1' else ' (non-dim)'),color=text_color, size = cbar_ts)
     cbar.ax.tick_params(labelsize=cbar_ts+1, color=text_color)
     cbar.outline.set_edgecolor(text_color)
     #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
     cbar.ax.xaxis.set_tick_params(color=text_color)
     plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color=text_color)
-    cbar.set_label(colorbar_label,color=text_color, size = text_size)
+    if colorbar_label != None: 
+        cbar.set_label(colorbar_label,color=text_color, size = text_size)
 
 
 
@@ -480,7 +481,7 @@ def plot_scalar(step: Step,
         # Add the second colorbar for the masked data
         cax3 = divider.append_axes("right", size="5%", pad=0.05)  # Increase the pad to place it below the first colorbar
         cbar3 = plt.colorbar(surf2, cax=cax3, orientation="vertical", alpha=ycbar)
-        cbar3.set_label('Melt Fraction', size=cbar_ts,color=text_color)
+        cbar3.set_label('Melt fraction (non-dim)', size=cbar_ts,color=text_color)
         cbar3.ax.tick_params(labelsize=text_size-2, color=text_color)
         #cbar3.ax.xaxis.set_tick_params(color=text_color)
         cbar3.ax.yaxis.set_tick_params(color=text_color)
@@ -825,9 +826,10 @@ def plot_scalar_tracers(step: Step,
     x_pos = step.tracers['x'][0][::] #TGM: could change ::2 to some variable depending on how many tracers we want to plot
     y_pos = step.tracers['y'][0][::]
     field_tracer = step.tracers[var][0][::]
+    mass = step.tracers['Mass']   
     if var == "TimeMelted":
         field_tracer = print_time - field_tracer/(3600*24*365.25)/1.0e9
-    print('MINMAX TRACER', np.min(field_tracer), np.max(field_tracer))
+    bulk_concentration = np.sum(mass * field_tracer) / np.sum(mass)
 
     xmin, xmax = x_pos.min(), x_pos.max()
     ymin, ymax = y_pos.min(), y_pos.max()
