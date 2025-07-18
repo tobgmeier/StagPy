@@ -466,7 +466,7 @@ def plot_scalar(step: Step,
     cbar.set_label(meta.description +
                (' pert.' if conf.field.perturbation else '') +
                (' ({})'.format(unit) if unit else '') +
-               (' (' + meta.dim + ')' if meta.dim != '1' else ' (non-dim)'),color=text_color, size = cbar_ts)
+               (' (' + meta.dim + ')' if meta.dim != '1' else ''),color=text_color, size = cbar_ts)
     cbar.ax.tick_params(labelsize=cbar_ts+1, color=text_color)
     cbar.outline.set_edgecolor(text_color)
     #cbar.ax.xaxis.set_tick_params(color=text_color,rotation=270)
@@ -481,7 +481,7 @@ def plot_scalar(step: Step,
         # Add the second colorbar for the masked data
         cax3 = divider.append_axes("right", size="5%", pad=0.05)  # Increase the pad to place it below the first colorbar
         cbar3 = plt.colorbar(surf2, cax=cax3, orientation="vertical", alpha=ycbar)
-        cbar3.set_label('Melt fraction (non-dim)', size=cbar_ts,color=text_color)
+        cbar3.set_label('Melt fraction', size=cbar_ts,color=text_color)
         cbar3.ax.tick_params(labelsize=text_size-2, color=text_color)
         #cbar3.ax.xaxis.set_tick_params(color=text_color)
         cbar3.ax.yaxis.set_tick_params(color=text_color)
